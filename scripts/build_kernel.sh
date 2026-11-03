@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Compile the application's defhw functions and pipelines with elixir-hls (mix ehls.compile:
+# CIRCT, each kernel checked in simulation against Elixir) into build/hw (kernels.json,
+# pipelines.json, ... for gateware/soc.py) and build/gen/hw_kernels.erl (the AtomVM runtime
+# backend). Compiled along: the backend's lib/*.ex (EHLS.Check) and the block packages'
+# lib/*.ex.
+# usage (in the application's directory): [N=2000] scripts/build_kernel.sh <file.ex>...
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
+[ $# -gt 0 ] || { sed -n 2,6p "$0"; exit 1; }
+WITH=()
+for f in $(hls_files lib '*.ex'); do
+    case "$f" in "$APP_DIR"/lib/*) ;; *) WITH+=(--with "$f") ;; esac  # the application's own files are FILES
+done
+FILES=()
+for f in "$@"; do FILES+=("$(realpath "$f")"); done
+ehls_mix ehls.compile --out "$OUT" "${WITH[@]}" "${FILES[@]}"
