@@ -109,7 +109,7 @@ Run it when build_soc.sh reports a shortfall or after a large change.
 
 `examples/` is an application: `gpio_demo.ex` (the board's LEDs and buttons through `EHLS.GPIO`:
 LED 0 blinks, LED 1 follows button 0, every edge of a button is a message, printed), `button_counter.ex` (a counter of button presses in
-the FPGA, read by the CPU), `hello.ex`.
+the FPGA with a debounce function, its low bit on an LED, without the CPU), `hello.ex`.
 
 ```sh
 cd examples && ../scripts/build_kernel.sh lib/gpio_demo.ex && ../scripts/build_soc.sh
