@@ -17,8 +17,7 @@ defmodule KernelDemo do
   end
 end
 
-KernelDemo.stream_kernel(123)                                  # CPU
-KernelDemo.stream_kernel(<<123::32-little, 456::32-little>>)   # FPGA: the 32-bit words streamed through the kernel by DMA
+KernelDemo.stream_kernel(123)    # on the CPU; in the FPGA as a stage of a defpipeline
 ```
 
 ## What the SoC gets
@@ -26,8 +25,6 @@ KernelDemo.stream_kernel(<<123::32-little, 456::32-little>>)   # FPGA: the 32-bi
 gateware/soc.py is atomvm-tang25k's AtomVMSoC with elixir-hls' LiteX SoC backend
 (`hls_litex.add_hls`) and Gowin settings (`gowin_litex.setup`):
 
-* Kernels outside pipelines sit between two LiteDRAM DMA engines, selected by a CSR; the CPU
-  streams binaries through them (`:hwstream.run/3`).
 * Each `defpipeline` becomes its stages linked by registered streams, enabled by a CSR bit;
   params are registers the CPU writes (`:hwstream.set_param/2`), the state of `scan` stages
   is readable (`:hwstream.peek/1`).
@@ -110,12 +107,13 @@ Run it when build_soc.sh reports a shortfall or after a large change.
 
 ## Examples
 
-`examples/` is an application without block packages: `kernel_demo.ex` (FPGA against CPU
-with `EHLS.Check`), `multi_demo.ex` (several kernels, each call picking its own),
-`stream_filters.ex` (stateful kernels, `:continue`), `hello.ex`.
+`examples/` is an application: `gpio_demo.ex` (the board's LEDs and buttons through `EHLS.GPIO`:
+LED 0 blinks, LED 1 follows button 0, every edge of a button is a message, printed), `hello.ex`.
 
 ```sh
-cd examples && ../scripts/build_kernel.sh lib/kernel_demo.ex lib/multi_demo.ex lib/stream_filters.ex
+cd examples && ../scripts/build_kernel.sh lib/gpio_demo.ex && ../scripts/build_soc.sh
+../scripts/build_atomvm.sh && ../scripts/flash.sh vm
+../scripts/build_ex.sh gpio_demo GpioDemo && ../scripts/run.sh gpio_demo
 ```
 
 Applications: [atomvm-fm-radio](https://github.com/elixir-hls/atomvm-fm-radio) (a stereo

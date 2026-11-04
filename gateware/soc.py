@@ -43,7 +43,7 @@ class HLSSoC(base_soc.AtomVMSoC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, with_dock_gpio=not _uses_board_parts(), **kwargs)
         packages = list(filter(None, os.environ.get("EHLS_BLOCKS", "").split(":")))
-        hls_litex.add_hls(self, os.path.dirname(KERNELS_JSON), packages)
+        hls_litex.add_hls(self, os.path.dirname(KERNELS_JSON), packages, pin_pull=gowin_litex.pin_pull)
         gowin_litex.setup(self)
 
 

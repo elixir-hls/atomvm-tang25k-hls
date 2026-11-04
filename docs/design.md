@@ -9,7 +9,7 @@ priv/backend/<name>, `ELIXIR_HLS`; scripts/env.sh selects them with `EHLS_DEVICE
 `EHLS_SOC=litex`, `EHLS_RUNTIME=atomvm`):
 
 * gateware/soc.py: atomvm-tang25k's AtomVMSoC (pins, SDRAM, clocks, the CPU) plus the
-  LiteX backend (`hls_litex.add_hls(soc, build/hw, EHLS_BLOCKS)`: DMA kernels, pipelines,
+  LiteX backend (`hls_litex.add_hls(soc, build/hw, EHLS_BLOCKS)`: pipelines,
   params and state through the `hwstream_*` CSRs, the block packages' blocks and
   peripherals) and the Gowin backend (`gowin_litex.setup`: `GW_PLACE` / `GW_ROUTE`, the
   timing report's worst paths);
