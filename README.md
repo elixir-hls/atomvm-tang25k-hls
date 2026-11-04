@@ -30,8 +30,8 @@ gateware/soc.py is atomvm-tang25k's AtomVMSoC with elixir-hls' LiteX SoC backend
   is readable (`:hwstream.peek/1`).
 * The kernels are wrapped in elixir-hls' stream adapters (priv/verilog).
 * The LiteX backend's built-in blocks (every module gets them): `ticks(rate)` (a source of
-  words at `rate` per second) and `capture()` (a sink writing words to memory when the CPU
-  asks, `:hwstream.capture/1`).
+  words at `rate` per second), `capture()` (a sink writing words to memory when the CPU
+  asks, `:hwstream.capture/1`) and `hold(name)` (a sink keeping the latest word as a level).
 * Block packages for the board's parts: `use EHLS, blocks: [...]`, found through the
   application's hls.env:
   [atomvm-tang25k-usb-host](https://github.com/elixir-hls/atomvm-tang25k-usb-host),
@@ -108,7 +108,8 @@ Run it when build_soc.sh reports a shortfall or after a large change.
 ## Examples
 
 `examples/` is an application: `gpio_demo.ex` (the board's LEDs and buttons through `EHLS.GPIO`:
-LED 0 blinks, LED 1 follows button 0, every edge of a button is a message, printed), `hello.ex`.
+LED 0 blinks, LED 1 follows button 0, every edge of a button is a message, printed), `button_counter.ex` (a counter of button presses in
+the FPGA, read by the CPU), `hello.ex`.
 
 ```sh
 cd examples && ../scripts/build_kernel.sh lib/gpio_demo.ex && ../scripts/build_soc.sh
