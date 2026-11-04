@@ -45,6 +45,11 @@ gateware/soc.py is atomvm-tang25k's AtomVMSoC with elixir-hls' LiteX SoC backend
   `gateware/<module>.py` (`BLOCKS`, `PERIPHERALS`, `configure(options)`), `src/**/*.c`
   (NIFs inside `#if __has_include("<x>_csr.h")`) and `csr_headers.json`.
 
+The board's LEDs and buttons are parts for `EHLS.GPIO` (elixir-hls docs/reference.md), described in
+`board_gpio.json`: `use EHLS, blocks: [{EHLS.GPIO, board: [:led0, :led1, :button0, :button1]}]`.
+An application using one of them gets their pins for its circuit, so the base SoC's LEDs and
+buttons, and AtomVM's `gpio` module, are gone from that SoC (`examples/lib/gpio_demo.ex`).
+
 ## Applications
 
 An application is a directory with its sources in `lib/` and an `hls.env` naming its block

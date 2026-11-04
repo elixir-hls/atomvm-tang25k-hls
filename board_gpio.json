@@ -1,0 +1,6 @@
+{
+  "led0": {"dir": "out", "pin": "J1:17"},
+  "led1": {"dir": "out", "pin": "J1:25"},
+  "button0": {"dir": "in", "pin": "J1:37", "pull": "down"},
+  "button1": {"dir": "in", "pin": "J1:39", "pull": "down"}
+}

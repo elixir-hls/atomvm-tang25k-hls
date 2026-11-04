@@ -62,6 +62,8 @@ _d="$(hls_dep elixir_hls)"
 ELIXIR_HLS="$(cd "${ELIXIR_HLS:-${_d:-$_HERE/../elixir-hls}}" && pwd)"
 export ELIXIR_HLS
 export EHLS_DEVICE=gowin_gw5a EHLS_SOC=litex EHLS_RUNTIME=atomvm
+# the board's parts for EHLS.GPIO (use EHLS, blocks: [{EHLS.GPIO, board: [:led0, ...]}])
+export EHLS_BOARD_GPIO="$_HERE/board_gpio.json"
 EHLS_GOWIN="$ELIXIR_HLS/priv/backend/gowin"
 EHLS_ATOMVM="$ELIXIR_HLS/priv/backend/atomvm"
 # mix in elixir-hls with its own mix.exs (not the application's MIX_EXS, if one is set)

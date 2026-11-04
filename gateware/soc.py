@@ -10,6 +10,7 @@ Environment (scripts/env.sh): ATOMVM_TANG25K, ELIXIR_HLS, OUT (the application's
 KERNELS_JSON overrides its hw/kernels.json), EHLS_BLOCKS (the block packages' roots),
 GW_PLACE / GW_ROUTE.
 """
+import json
 import os
 import sys
 
@@ -29,9 +30,18 @@ KERNELS_JSON = os.environ.get("KERNELS_JSON",
                                            "hw", "kernels.json"))
 
 
+def _uses_board_parts():
+    """Does the application use the board's parts through EHLS.GPIO (board_gpio.json)? Their
+    pins then go to its circuit, not to the base SoC's LEDs and buttons."""
+    path = os.path.join(os.path.dirname(KERNELS_JSON), "packages.json")
+    packages = json.load(open(path)) if os.path.exists(path) else []
+    return any(pin.get("board") for p in packages if p["gateware"] == "ehls_gpio"
+               for pin in p["options"]["pins"])
+
+
 class HLSSoC(base_soc.AtomVMSoC):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, with_dock_gpio=not _uses_board_parts(), **kwargs)
         packages = list(filter(None, os.environ.get("EHLS_BLOCKS", "").split(":")))
         hls_litex.add_hls(self, os.path.dirname(KERNELS_JSON), packages)
         gowin_litex.setup(self)
