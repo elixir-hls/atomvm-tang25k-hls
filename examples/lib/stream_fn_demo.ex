@@ -6,7 +6,7 @@ defmodule StreamFnDemo do
   use EHLS
   import Bitwise
 
-  defhls running(x :: s16, s :: s32 \\ 0) :: s32 do
+  defhls running(x :: s16, s :: state(s32)) :: s32 do
     {s + x, s + x}
   end
 
@@ -27,7 +27,7 @@ defmodule StreamFnDemo do
   end
 
   defhls chain(x :: stream(s16)) :: stream(s32) do
-    x |> smooth() |> smooth() |> scan(&running/2)
+    x |> smooth() |> smooth() |> transform(0, &running/2)
   end
 
   definstance chain_hw(samples) do
