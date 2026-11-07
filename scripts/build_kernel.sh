@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile the application's defhw functions and pipelines with elixir-hls (mix ehls.compile:
+# Compile the application's defhls functions and pipelines with elixir-hls (mix ehls.compile:
 # CIRCT, each kernel checked in simulation against Elixir) into build/hw (kernels.json,
 # pipelines.json, ... for gateware/soc.py) and build/gen/hw_kernels.erl (the AtomVM runtime
 # backend). Compiled along: the backend's lib/*.ex (EHLS.Check) and the block packages'

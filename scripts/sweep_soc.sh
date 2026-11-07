@@ -9,7 +9,7 @@
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 require_gowin
-[ -e "$OUT/hw/kernels.json" ] || { echo "compile the defhw kernels first (scripts/build_kernel.sh)"; exit 1; }
+[ -e "$OUT/hw/kernels.json" ] || { echo "compile the defhls kernels first (scripts/build_kernel.sh)"; exit 1; }
 SW="$OUT/soc_sweep"
 rm -rf "$SW" && mkdir -p "$SW"
 build() {   # build <place> <route>

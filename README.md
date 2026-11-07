@@ -10,14 +10,14 @@ LiteX SoC and AtomVM, under elixir-hls' backends (`EHLS_DEVICE=gowin_gw5a`, `EHL
 defmodule KernelDemo do
   use EHLS
 
-  defhw stream_kernel(x :: u32) :: u32 do
+  defhls stream_kernel(x :: u32) :: u32 do
     a = signed(x &&& 0xFFFF, 16)
     b = signed(x >>> 16, 16)
     if a > b, do: a * 3 + b, else: a + b * 2
   end
 end
 
-KernelDemo.stream_kernel(123)    # on the CPU; in the FPGA as a stage of a defpipeline
+KernelDemo.stream_kernel(123)    # on the CPU; in the FPGA as a stage of a definstance
 ```
 
 ## What the SoC gets
@@ -25,13 +25,14 @@ KernelDemo.stream_kernel(123)    # on the CPU; in the FPGA as a stage of a defpi
 gateware/soc.py is atomvm-tang25k's AtomVMSoC with elixir-hls' LiteX SoC backend
 (`hls_litex.add_hls`) and Gowin settings (`gowin_litex.setup`):
 
-* Each `defpipeline` becomes its stages linked by registered streams, enabled by a CSR bit;
+* Each `definstance` becomes its stages linked by registered streams, running from reset;
+  an argument or a result gets a DMA engine on its own LiteDRAM port, ending in an interrupt;
   params are registers the CPU writes (`:hwstream.set_param/2`), the state of `scan` stages
   is readable (`:hwstream.peek/1`).
 * The kernels are wrapped in elixir-hls' stream adapters (priv/verilog).
 * The LiteX backend's built-in blocks (every module gets them): `ticks(rate)` (a source of
-  words at `rate` per second), `capture()` (a sink writing words to memory when the CPU
-  asks, `:hwstream.capture/1`) and `hold(name)` (a sink keeping the latest word as a level).
+  words at `rate` per second), `discard()` (a sink doing nothing with the words) and `hold(name)` (a sink keeping the
+  latest word as a level).
 * Block packages for the board's parts: `use EHLS, blocks: [...]`, found through the
   application's hls.env:
   [atomvm-tang25k-usb-host](https://github.com/elixir-hls/atomvm-tang25k-usb-host),
@@ -66,7 +67,7 @@ The scripts run in the application's directory and build into its `build/`; elix
 # CIRCT_BIN: the CIRCT 1.160.0 release binaries' directory (elixir-hls README);
 # GOWIN_HOME: the Gowin IDE's directory (atomvm-tang25k README)
 H=../atomvm-tang25k-hls/scripts
-$H/build_kernel.sh lib/my_app.ex             # elixir-hls: defhw -> SV, checked in simulation
+$H/build_kernel.sh lib/my_app.ex             # elixir-hls: defhls -> SV, checked in simulation
 $H/build_soc.sh                              # the SoC (kernels, pipelines, peripherals)
 $H/build_atomvm.sh                           # AtomVM with the NIFs -> build/app_atomvm/
 $H/flash.sh vm lib                           # AtomVM + atomvmlib into the SPI flash
@@ -75,7 +76,7 @@ SECONDS_RUN=20 $H/run.sh my_app              # upload, boot, console for 20 s
 $H/flash.sh bitstream app my_app             # standalone: power on -> the app
 ```
 
-A new set of defhw functions needs build_kernel.sh, build_soc.sh and the app again; a new
+A new set of defhls functions needs build_kernel.sh, build_soc.sh and the app again; a new
 peripheral also moves CSR addresses (build_atomvm.sh and `flash.sh vm` again). Right after
 power-on or a flash write the board boots on its own for a few seconds; an upload (run.sh)
 started then fails with "unexpected reply": run it again.
