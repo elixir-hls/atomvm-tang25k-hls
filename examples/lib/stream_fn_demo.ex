@@ -46,7 +46,7 @@ defmodule StreamFnDemo do
     :timer.sleep(50)
     in_list = for i <- 1..1024, do: rem(i * 7919, 4096) - 2048
     expected = chain(in_list)
-    input = EHLS.Check.to_binary(in_list)
+    input = EHLS.Check.to_binary(in_list, 2)
     chain_hw(:stop)
     chain_hw(:start)
     output = chain_hw(input)
@@ -55,7 +55,7 @@ defmodule StreamFnDemo do
     check("the circuit agrees with the function on the CPU", got == expected)
     chain_hw(:stop)
     chain_hw(:start)
-    {a, b} = :erlang.split_binary(input, 2048)
+    {a, b} = :erlang.split_binary(input, 1024)
     in_two = chain_hw(a) <> chain_hw(b)
     check("in two calls too, the state going on", in_two == output)
     IO.puts("STREAM FN #{if :erlang.get(:failed) == :undefined, do: "OK", else: "FAILED"}")

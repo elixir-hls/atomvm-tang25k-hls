@@ -2,7 +2,7 @@ defmodule CpuEndsDemo do
   @moduledoc """
   An instance's CPU ends on the board, each with what it promises: a call waits in its process only,
   with both ends, with one, with messages, with what has gathered before a read, and how they fail.
-  One line of result per check, `CPU ENDS OK` at the end. CpuEndsDemo2 has the rest: LiteDRAM's crossbar
+  One line of result per check, `CPU ENDS OK` at the end. CpuEndsDemo2 and CpuEndsDemo3 have the rest: LiteDRAM's crossbar
   does not meet the timing with all the ends in one SoC.
   """
   use EHLS
@@ -13,16 +13,16 @@ defmodule CpuEndsDemo do
   end
 
   # a running sum: the state goes on from word to word
-  defhls sum(x :: u32, s :: u32 \\ 0) :: u32 do
+  defhls sum(x :: u32, s :: state(u32)) :: u32 do
     {s + x, s + x}
   end
 
   # one word out of two
-  defhls halve(x :: u32, on :: u1 \\ 0) :: emit(u32) do
+  defhls halve(x :: u32, on :: state(u1)) :: emit(u32) do
     if on == 1, do: {emit(x), 0}, else: {skip(), 1}
   end
 
-  defhls count(_x :: u32, n :: u32 \\ 0) :: u32 do
+  defhls count(_x :: u32, n :: state(u32)) :: u32 do
     {n, n + 1}
   end
 
@@ -31,32 +31,22 @@ defmodule CpuEndsDemo do
   end
 
   definstance halver(words) do
-    words |> scan(&halve/2)
+    words |> transform(0, &halve/2)
   end
 
   # into a level: nothing comes back
   definstance sink(words) do
-    words |> scan(&sum/2) |> hold(:last)
-  end
-
-  # 256 words gather, nobody reading
-  definstance gathering, buffer: 1024 do
-    ticks(100_000) |> scan(&count/2)
-  end
-
-  # keeps going, words are lost between reads
-  definstance dropping, overflow: :drop do
-    ticks(1_000_000) |> scan(&count/2)
+    words |> transform(0, &sum/2) |> hold(:last)
   end
 
   # slow: 10 words a second
   definstance slow do
-    ticks(10) |> scan(&count/2)
+    ticks(10) |> transform(0, &count/2)
   end
 
   # state only
   definstance closed do
-    ticks(1000) |> scan(&count/2) |> discard()
+    ticks(1000) |> transform(0, &count/2, name: :count) |> discard()
   end
 
   def start do
@@ -79,7 +69,7 @@ defmodule CpuEndsDemo do
 
     # a literal in flash is copied first
     check("a literal", gray_accel(<<1, 2, 3, 0, 4, 5, 6, 0>>) ==
-      EHLS.Check.to_binary([gray(0x030201), gray(0x060504)]))
+      EHLS.Check.to_binary([gray(0x030201), gray(0x060504)], 2))
 
     # another process keeps running through a slow call (fresh words: from reset some have gathered)
     slow(:stop)
@@ -87,17 +77,17 @@ defmodule CpuEndsDemo do
     me = self()
     ticker = spawn(fn -> tick(me, 0) end)
     t0 = :erlang.monotonic_time(:millisecond)
-    four = slow(:out, 12, timeout: 5000)
+    three = slow(:out, 3, timeout: 5000)
     t1 = :erlang.monotonic_time(:millisecond)
     send(ticker, :report)
     ticks = receive do
       {:ticks, n} -> n
     end
-    check("a call waits in its process only (#{t1 - t0} ms, #{ticks} ticks meanwhile)", byte_size(four) == 12 and ticks >= 2)
+    check("a call waits in its process only (#{t1 - t0} ms, #{ticks} ticks meanwhile)", byte_size(three) == 12 and ticks >= 2)
 
     # emit: the size must be said
     check("emit: f(bin) is refused", raises(fn -> halver(bin) end) == :out_size_needed)
-    check("emit: out:", byte_size(halver(bin, out: 64)) == 64)
+    check("emit: out:", byte_size(halver(bin, out: 16)) == 64)
 
     # input only
     sink(:stop)
@@ -109,10 +99,10 @@ defmodule CpuEndsDemo do
 
     # ins and outs separately, small enough to fit in the links
     check("f(:in) then f(:out)", gray_accel(:in, EHLS.Check.to_binary([0x010203])) == :ok and
-      gray_accel(:out, 4) == EHLS.Check.to_binary([gray(0x010203)]))
+      gray_accel(:out, 1) == EHLS.Check.to_binary([gray(0x010203)], 2))
 
     # messages
-    :ok = gray_accel(:request, :out, 128)
+    :ok = gray_accel(:request, :out, 32)
     :ok = gray_accel(:send, :pixels, bin)
     sent = receive do
       {:gray_accel, :pixels, :sent} -> true
@@ -124,12 +114,12 @@ defmodule CpuEndsDemo do
     after
       2000 -> nil
     end
-    check("messages", sent and out == EHLS.Check.to_binary(Enum.map(words, &gray/1)))
+    check("messages", sent and out == EHLS.Check.to_binary(Enum.map(words, &gray/1), 2))
 
     # one at a time
-    :ok = slow(:request, :out, 400)
-    check(":busy as an answer", slow(:request, :out, 4) == {:error, :busy})
-    check(":busy raised", raises(fn -> slow(:out, 4) end) == :busy)
+    :ok = slow(:request, :out, 100)
+    check(":busy as an answer", slow(:request, :out, 1) == {:error, :busy})
+    check(":busy raised", raises(fn -> slow(:out, 1) end) == :busy)
     slow(:stop)
     slow(:start)
     receive do
@@ -139,28 +129,13 @@ defmodule CpuEndsDemo do
     end
 
     # a timeout cancels; the end is free again
-    check(":timeout", raises(fn -> slow(:out, 400, timeout: 100) end) == :timeout)
-    check("free after a timeout", byte_size(slow(:out, 4, timeout: 1000)) == 4)
-
-    # a buffer: all of it has gathered and is there at once
-    :timer.sleep(20)
-    t2 = :erlang.monotonic_time(:millisecond)
-    gathered = for <<w::little-32 <- gathering(:out, 1024)>>, do: w
-    t3 = :erlang.monotonic_time(:millisecond)
-    check("a buffer: gathered from reset, in order, at once (#{t3 - t2} ms)",
-      gathered == :lists.seq(0, 255))
-
-    # overflow: :drop: words in a read are consecutive, between reads they are lost
-    [a | _] = as = for <<w::little-32 <- dropping(:out, 64)>>, do: w
-    check("drop: consecutive within a read", as == :lists.seq(a, a + 15))
-    :timer.sleep(10)
-    [b | _] = for <<w::little-32 <- dropping(:out, 64)>>, do: w
-    check("drop: lost between reads", b > a + 1000)
+    check(":timeout", raises(fn -> slow(:out, 100, timeout: 100) end) == :timeout)
+    check("free after a timeout", byte_size(slow(:out, 1, timeout: 1000)) == 4)
 
     # stopped
     slow(:stop)
-    check(":stopped raised", raises(fn -> slow(:out, 4) end) == :stopped)
-    check(":stopped as an answer", slow(:request, :out, 4) == {:error, :stopped})
+    check(":stopped raised", raises(fn -> slow(:out, 1) end) == :stopped)
+    check(":stopped as an answer", slow(:request, :out, 1) == {:error, :stopped})
     slow(:start)
 
     # closed: the state moves, no end

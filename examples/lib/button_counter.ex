@@ -7,7 +7,7 @@ defmodule ButtonCounter do
   use EHLS, blocks: [{EHLS.GPIO, board: [:led0, :led1, :button0, :button1]}]
 
   # the level, once it has stayed at a new value for 8 samples: emits only on the way up
-  defhls debounce(level :: u1, st :: {u1, u4} \\ {0, 0}) :: emit(u1) do
+  defhls debounce(level :: u1, st :: state({u1, u4})) :: emit(u1) do
     {stable, n} = st
 
     if level == stable do
@@ -21,12 +21,12 @@ defmodule ButtonCounter do
     end
   end
 
-  defhls count(_press :: u1, n :: u16 \\ 0) :: u16 do
+  defhls count(_press :: u1, n :: state(u16)) :: u16 do
     {n + 1, n + 1}
   end
 
   definstance presses do
-    ticks(1000) |> sample(:button0) |> scan(&debounce/2) |> scan(&count/2) |> pin_out(:led1)
+    ticks(1000) |> sample(:button0) |> transform({0, 0}, &debounce/2) |> transform(0, &count/2, name: :count) |> pin_out(:led1)
   end
 
   def start do
