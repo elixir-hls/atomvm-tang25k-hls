@@ -66,11 +66,12 @@ export EHLS_DEVICE=gowin_gw5a EHLS_SOC=litex EHLS_RUNTIME=atomvm
 export EHLS_BOARD_GPIO="$_HERE/board_gpio.json"
 EHLS_GOWIN="$ELIXIR_HLS/priv/backend/gowin"
 EHLS_ATOMVM="$ELIXIR_HLS/priv/backend/atomvm"
-# mix in elixir-hls with its own mix.exs (not the application's MIX_EXS, if one is set)
-ehls_mix() { (cd "$ELIXIR_HLS" && env -u MIX_EXS mix "$@"); }
+# mix in elixir-hls with its own mix.exs (not the application's MIX_EXS, if one is set), in prod:
+# elixir-hls fetched as a dependency has no deps of its own, and prod needs none (ex_doc is dev only)
+ehls_mix() { (cd "$ELIXIR_HLS" && env -u MIX_EXS MIX_ENV=prod mix "$@"); }
 hls_ebin() {
     ehls_mix compile > /dev/null 2>&1 || { echo "elixir-hls: mix compile failed" >&2; exit 1; }
-    EHLS_EBIN="$ELIXIR_HLS/_build/dev/lib/elixir_hls/ebin"
+    EHLS_EBIN="$ELIXIR_HLS/_build/prod/lib/elixir_hls/ebin"
 }
 
 # files of the AtomVM runtime backend, this target, the block packages and the application:
