@@ -27,7 +27,7 @@ gateware/soc.py is atomvm-tang25k's AtomVMSoC with elixir-hls' LiteX SoC backend
 
 * Each `definstance` becomes its stages linked by registered streams, running from reset;
   an argument or a result gets a DMA engine on its own LiteDRAM port, ending in an interrupt;
-  params are registers the CPU writes (`:hwstream.set_param/2`), the state of `scan` stages
+  params are registers the CPU writes (`:hwstream.set_param/2`), the state of `transform` stages with a name
   is readable (`:hwstream.peek/1`).
 * The kernels are wrapped in elixir-hls' stream adapters (priv/verilog).
 * The LiteX backend's built-in blocks (every module gets them): `ticks(rate)` (a source of
@@ -110,7 +110,9 @@ Run it when build_soc.sh reports a shortfall or after a large change.
 
 `examples/` is an application: `gpio_demo.ex` (the board's LEDs and buttons through `EHLS.GPIO`:
 LED 0 blinks, LED 1 follows button 0, every edge of a button is a message, printed), `button_counter.ex` (a counter of button presses in
-the FPGA with a debounce function, its low bit on an LED, without the CPU), `hello.ex`.
+the FPGA with a debounce function, its low bit on an LED, without the CPU), `hello.ex`, and on the CPU ends: `cpu_ends_demo.ex`, `cpu_ends_demo2.ex`, `cpu_ends_demo3.ex`, `packed_demo.ex` (elements
+packed in binaries), `stream_fn_demo.ex`. Each is its own SoC, so `scripts/sweep_soc.sh` finds its placement: `GW_PLACE=3`,
+`3`, `2`, default and `3` met the timing on 2026-11-07.
 
 ```sh
 cd examples && ../scripts/build_kernel.sh lib/gpio_demo.ex && ../scripts/build_soc.sh
