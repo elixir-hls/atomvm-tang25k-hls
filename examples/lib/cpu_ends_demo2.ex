@@ -69,14 +69,25 @@ defmodule CpuEndsDemo2 do
     [z | _] = for <<w::little-32 <- waiting(:out, 2)>>, do: w
     check("start: clean links, from 0 again (#{z})", z == 0)
 
-    # a big one
+    # a big one, called from a process that does not hold the list: on AtomVM the messages of a call bring
+    # collections, and each copies the whole heap (about 400 ms instead of 7 ms with these 16384 integers held)
     big = EHLS.Check.words(16384)
     bigbin = EHLS.Check.to_binary(big)
-    t4 = :erlang.monotonic_time(:millisecond)
-    out = gray_accel(bigbin)
-    t5 = :erlang.monotonic_time(:millisecond)
-    ok = out == EHLS.Check.to_binary(Enum.map(big, &gray/1), 2)
-    check("#{byte_size(bigbin)} bytes in #{t5 - t4} ms", ok)
+    expected = EHLS.Check.to_binary(Enum.map(big, &gray/1), 2)
+    me = self()
+
+    spawn(fn ->
+      t4 = :erlang.monotonic_time(:millisecond)
+      out = gray_accel(bigbin)
+      t5 = :erlang.monotonic_time(:millisecond)
+      send(me, {:big, out, t5 - t4})
+    end)
+
+    receive do
+      {:big, out, ms} -> check("#{byte_size(bigbin)} bytes in #{ms} ms", out == expected)
+    after
+      10_000 -> check("#{byte_size(bigbin)} bytes: an answer", false)
+    end
 
     IO.puts("CPU ENDS #{if :erlang.get(:failed) == :undefined, do: "OK", else: "FAILED"}")
   end
