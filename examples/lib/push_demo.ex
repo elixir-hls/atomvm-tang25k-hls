@@ -39,18 +39,23 @@ defmodule PushDemo do
     # a tuple
     check("a tuple", pair(:send, :p, {3, -4}) == :ok and pair(:out, 1, as: :list) == [{-4, 3}])
 
-    # with the DMA's elements: each keeps its order
+    # with the DMA's elements, the output asked for first: each keeps its order
+    :ok = one(:request, :out, 50)
     :ok = one(:send, :x, :lists.seq(1, 40))
-    pushed = for v <- :lists.seq(100, 109), do: one(:send, :x, v)
-    receive do
-      {:one, :x, :sent} -> :ok
+    for v <- :lists.seq(100, 109), do: push(v)
+    got =
+      receive do
+        {:one, :out, bin} -> EHLS.unpack(bin, 16)
+      after
+        3000 -> []
+      end
+    sent = receive do
+      {:one, :x, :sent} -> true
     after
-      1000 -> check("the DMA's sent", false)
+      1000 -> false
     end
-    got = one(:out, 40 + length(pushed), as: :list)
     check("with the DMA's: all, each in order",
-      pushed == :lists.duplicate(10, :ok) and
-        for(v <- got, v < 1100, do: v) == :lists.seq(1001, 1040) and
+      sent and for(v <- got, v < 1100, do: v) == :lists.seq(1001, 1040) and
         for(v <- got, v >= 1100, do: v) == :lists.seq(1100, 1109))
 
     # nobody reading: the FIFO fills
@@ -64,6 +69,14 @@ defmodule PushDemo do
     check("started again", one(:send, :x, 9) == :ok and one(:out, 1, as: :list) == [1009])
 
     IO.puts("PUSH #{if :erlang.get(:failed) == :undefined, do: "OK", else: "FAILED"}")
+  end
+
+  # waits while the FIFO is full
+  defp push(v) do
+    case one(:send, :x, v) do
+      :ok -> :ok
+      {:error, :full} -> :timer.sleep(1); push(v)
+    end
   end
 
   defp fill(200), do: 200
