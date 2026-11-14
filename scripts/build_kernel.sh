@@ -3,7 +3,10 @@
 # CIRCT, each kernel checked in simulation against Elixir) into build/hw (kernels.json,
 # pipelines.json, ... for gateware/soc.py) and build/gen/hw_kernels.erl (the AtomVM runtime
 # backend). Compiled along: the backend's lib/*.ex (EHLS.Check) and the block packages'
-# lib/*.ex.
+# lib/*.ex. Then the same functions as C for the CPU (mix ehls.compile --target cpu, each checked
+# against Elixir with the host's gcc): build/gen/ehls_native_kernels.c, which build_atomvm.sh builds
+# into AtomVM (the hwnative NIFs), and build/gen/hw_native.erl; used by a stage `on: :cpu` and by
+# instances on the CPU with EHLS_CPU=native.
 # usage (in the application's directory): [N=2000] scripts/build_kernel.sh <file.ex>...
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
@@ -15,3 +18,4 @@ done
 FILES=()
 for f in "$@"; do FILES+=("$(realpath "$f")"); done
 ehls_mix ehls.compile --out "$OUT" "${WITH[@]}" "${FILES[@]}"
+ehls_mix ehls.compile --target cpu --out "$OUT" "${WITH[@]}" "${FILES[@]}"

@@ -14,9 +14,10 @@ rm -rf "$B" && mkdir -p "$B/riscv32"
 hls_ebin
 erlc -o "$B" $(hls_files lib '*.erl') $(ls "$OUT"/gen/*.erl 2>/dev/null)   # + hw_kernels (build_kernel.sh)
 elixirc -pa "$EHLS_EBIN" -pa "$B" -o "$B" $(hls_files lib '*.ex') > /dev/null
-# from elixir-hls only EHLS (the generated code's helpers: wrap, state, run_cpu) and EHLS.GPIO;
-# the compiler (EHLS.MLIR, EHLS.Pipeline, EHLS.Blocks, the Mix task) runs on the host
-cp "$EHLS_EBIN/Elixir.EHLS.beam" "$EHLS_EBIN/Elixir.EHLS.GPIO.beam" "$B/"
+# from elixir-hls only EHLS (the generated code's helpers: wrap, state, run_cpu), EHLS.GPIO and
+# EHLS.CpuInstance (an instance placed on the CPU); the compiler (EHLS.MLIR, EHLS.Pipeline,
+# EHLS.Blocks, the Mix task) runs on the host
+cp "$EHLS_EBIN/Elixir.EHLS.beam" "$EHLS_EBIN/Elixir.EHLS.GPIO.beam" "$EHLS_EBIN/Elixir.EHLS.CpuInstance.beam" "$B/"
 BEAMS=("$B"/*.beam)
 if [ "${EMU:-0}" != 1 ]; then
     erl -pa "$HOST_DIR/libs/jit/src/beams" -noshell -s jit_precompile -s init stop \
