@@ -26,3 +26,11 @@ if [ "${EMU:-0}" != 1 ]; then
 fi
 "$HOST_DIR/tools/packbeam/packbeam" create -s "$MOD" "$OUT/$NAME.avm" "${BEAMS[@]}"
 ls -l "$OUT/$NAME.avm"
+# the board's slot for an application (the base's AtomVM, CONFIG_AVM_APP_SIZE): a larger pack is cut short by the
+# loader, and AtomVM runs whatever application the flash held before
+SLOT=$(sed -n 's/^CONFIG_AVM_APP_SIZE=//p' "$BASE/apps/atomvm/prj.conf")
+SIZE=$(stat -c %s "$OUT/$NAME.avm")
+if [ -n "$SLOT" ] && [ "$SIZE" -gt $((SLOT)) ]; then
+    echo "build_ex.sh: $NAME.avm is $SIZE bytes, more than the board's application slot ($((SLOT)) bytes)" >&2
+    exit 1
+fi
