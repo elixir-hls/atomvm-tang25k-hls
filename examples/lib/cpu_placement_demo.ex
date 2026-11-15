@@ -1,7 +1,7 @@
 defmodule CpuPlacementDemo do
   @moduledoc """
   Instances placed on the CPU (elixir-hls, `on: :cpu`): the same calls as an instance in the FPGA, run by a
-  process on AtomVM; with EHLS_CPU=native their stages run as C (the hwnative NIFs). The checks of elixir-hls'
+  process on AtomVM; with EHLS_CPU=nif their stages run as C, as machine code (the hwnif NIFs). The checks of elixir-hls'
   host test (priv/backend/atomvm/test/ehls_placement_test.erl), then the time per element. `PLACEMENT OK` at
   the end.
   """
