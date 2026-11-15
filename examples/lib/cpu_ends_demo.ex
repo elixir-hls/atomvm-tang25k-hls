@@ -13,16 +13,16 @@ defmodule CpuEndsDemo do
   end
 
   # a running sum: the state goes on from word to word
-  defhls sum(x :: u32, s :: state(u32)) :: u32 do
+  defhls sum(x :: u32, s :: u32) :: {u32, u32} do
     {s + x, s + x}
   end
 
   # one word out of two
-  defhls halve(x :: u32, on :: state(u1)) :: emit(u32) do
-    if on == 1, do: {emit(x), 0}, else: {skip(), 1}
+  defhls halve(x :: u32, on :: u1) :: {[u32], u1} do
+    if on == 1, do: {[x], 0}, else: {[], 1}
   end
 
-  defhls count(_x :: u32, n :: state(u32)) :: u32 do
+  defhls count(_x :: u32, n :: u32) :: {u32, u32} do
     {n, n + 1}
   end
 

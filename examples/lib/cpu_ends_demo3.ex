@@ -5,7 +5,7 @@ defmodule CpuEndsDemo3 do
   """
   use EHLS
 
-  defhls count(_x :: u32, n :: state(u32)) :: u32 do
+  defhls count(_x :: u32, n :: u32) :: {u32, u32} do
     {n, n + 1}
   end
 

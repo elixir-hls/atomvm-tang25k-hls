@@ -15,7 +15,7 @@ defmodule CpuPlacementDemo do
     x * 2
   end
 
-  defhls running(x :: u16, acc :: state(u32)) :: u32 do
+  defhls running(x :: u16, acc :: u32) :: {u32, u32} do
     {acc + x, acc + x}
   end
 
@@ -27,7 +27,7 @@ defmodule CpuPlacementDemo do
     x >>> 1
   end
 
-  defhls smooth(x :: s16, y :: state(s16)) :: s16 do
+  defhls smooth(x :: s16, y :: s16) :: {s16, s16} do
     {(x + y) >>> 1, x}
   end
 
@@ -39,7 +39,7 @@ defmodule CpuPlacementDemo do
     x
   end
 
-  defhls count(_x :: u32, n :: state(u32)) :: u32 do
+  defhls count(_x :: u32, n :: u32) :: {u32, u32} do
     {n + 1, n + 1}
   end
 

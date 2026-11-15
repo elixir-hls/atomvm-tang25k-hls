@@ -6,7 +6,7 @@ defmodule StreamFnDemo do
   use EHLS
   import Bitwise
 
-  defhls running(x :: s16, s :: state(s32)) :: s32 do
+  defhls running(x :: s16, s :: s32) :: {s32, s32} do
     {s + x, s + x}
   end
 
