@@ -10,8 +10,8 @@ defmodule StreamFnDemo do
     {s + x, s + x}
   end
 
-  defhls avg(w :: list(s16, 2)) :: s17 do
-    Enum.at(w, 0) + Enum.at(w, 1)
+  defhls avg(w :: tuple(s16, 2)) :: s17 do
+    elem(w, 0) + elem(w, 1)
   end
 
   defhls low(x :: s32) :: s16 do

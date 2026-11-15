@@ -1,6 +1,6 @@
 defmodule AgentDemo do
   @moduledoc """
-  One state for several lines (elixir-hls): `{:ok, n} = EHLS.Agent.start_link(0)`, set from an instance of values by
+  One state for several lines (elixir-hls): `{:ok, n} = EHLS.Agent.start_link(0, name: AgentDemo.Count)`, set from an instance of values by
   one line (`EHLS.Agent.update`), counted on 200 times a second by another (`EHLS.Agent.get_and_update`), each count an event. The counts
   go up by one, and after a set go on from the value set: one state, one update at a time. `AGENT OK` at the
   end.
@@ -20,7 +20,7 @@ defmodule AgentDemo do
   end
 
   definstance panel do
-    {:ok, n} = EHLS.Agent.start_link(0)
+    {:ok, n} = EHLS.Agent.start_link(0, name: AgentDemo.Count)
     changes(k_hw(:value)) |> EHLS.Agent.update(n, &set_n/2)
     ticks(200) |> EHLS.Agent.get_and_update(n, &inc_n/2) |> EHLS.PubSub.broadcast(:count)
   end
@@ -62,6 +62,10 @@ defmodule AgentDemo do
     check("from each value set, on by one (jumps #{inspect(jumps)})", jumps == for(v <- sets, do: v + 1))
     last = :lists.last(b)
     check("get: the state now (#{panel(:get, :n)} >= #{last})", panel(:get, :n) >= last)
+    # by its name, as Agent.get: the same state, read again
+    now = EHLS.Agent.get(AgentDemo.Count, & &1)
+    check("EHLS.Agent.get(AgentDemo.Count, & &1): #{now} >= #{last}", now >= last)
+    check("EHLS.Agent.get with a function", EHLS.Agent.get(AgentDemo.Count, &(&1 * 0)) == 0)
     IO.puts("AGENT #{if :erlang.get(:failed) == :undefined, do: "OK", else: "FAILED"}")
   end
 

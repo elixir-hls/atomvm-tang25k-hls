@@ -15,8 +15,8 @@ defmodule CpuEndsDemo2 do
     (((x >>> 16) &&& 0xFF) * 77 + ((x >>> 8) &&& 0xFF) * 150 + (x &&& 0xFF) * 29) >>> 8
   end
 
-  defhls fir(w :: list(s16, 4)) :: s16 do
-    Enum.at(w, 0) + Enum.at(w, 1) + Enum.at(w, 2) + Enum.at(w, 3)
+  defhls fir(w :: tuple(s16, 4)) :: s16 do
+    elem(w, 0) + elem(w, 1) + elem(w, 2) + elem(w, 3)
   end
 
   defhls count(_x :: u32, n :: u32) :: {u32, u32} do
