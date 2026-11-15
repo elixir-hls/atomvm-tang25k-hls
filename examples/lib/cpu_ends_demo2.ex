@@ -15,8 +15,8 @@ defmodule CpuEndsDemo2 do
     (((x >>> 16) &&& 0xFF) * 77 + ((x >>> 8) &&& 0xFF) * 150 + (x &&& 0xFF) * 29) >>> 8
   end
 
-  defhls fir(w :: window(s16, 4)) :: s16 do
-    w[0] + w[1] + w[2] + w[3]
+  defhls fir(w :: list(s16, 4)) :: s16 do
+    Enum.at(w, 0) + Enum.at(w, 1) + Enum.at(w, 2) + Enum.at(w, 3)
   end
 
   defhls count(_x :: u32, n :: u32) :: {u32, u32} do
@@ -28,7 +28,7 @@ defmodule CpuEndsDemo2 do
   end
 
   definstance decimator(samples) do
-    samples |> window(4) |> every(4) |> map(&fir/1)
+    samples |> chunk_every(4, 4, :discard) |> map(&fir/1)
   end
 
   definstance gray_accel(pixels) do
@@ -53,7 +53,7 @@ defmodule CpuEndsDemo2 do
     EHLS.Check.compare_stream("state across calls", &sum/2, &summer/1, EHLS.Check.words(256))
 
     # rates known at compile time
-    check("every(4): a quarter", byte_size(decimator(EHLS.Check.to_binary(EHLS.Check.words(16), 2))) == 8)
+    check("chunk_every(4, 4): a quarter", byte_size(decimator(EHLS.Check.to_binary(EHLS.Check.words(16), 2))) == 8)
 
     # from reset: the words wait in order, the first is 0 (the stream started at reset)
     waiting_words = for <<w::little-32 <- waiting(:out, 4)>>, do: w

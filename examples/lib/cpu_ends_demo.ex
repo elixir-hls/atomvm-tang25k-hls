@@ -46,7 +46,7 @@ defmodule CpuEndsDemo do
 
   # state only
   definstance closed do
-    ticks(1000) |> transform(0, &count/2, name: :count) |> discard()
+    ticks(1000) |> transform(0, &count/2, name: :count) |> run()
   end
 
   def start do

@@ -10,20 +10,20 @@ defmodule StreamFnDemo do
     {s + x, s + x}
   end
 
-  defhls avg(w :: window(s16, 4)) :: s18 do
-    w[0] + w[1] + w[2] + w[3]
+  defhls avg(w :: list(s16, 2)) :: s17 do
+    Enum.at(w, 0) + Enum.at(w, 1)
   end
 
   defhls low(x :: s32) :: s16 do
     x
   end
 
-  defhls wide(x :: s18) :: s16 do
-    x >>> 2
+  defhls wide(x :: s17) :: s16 do
+    x >>> 1
   end
 
   defhls smooth(x :: stream(s16)) :: stream(s16) do
-    x |> window(4) |> every(2) |> map(&avg/1) |> wide()
+    x |> chunk_every(2, 2, :discard) |> map(&avg/1) |> wide()
   end
 
   defhls chain(x :: stream(s16)) :: stream(s32) do
