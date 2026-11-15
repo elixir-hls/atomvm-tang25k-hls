@@ -47,13 +47,13 @@ defmodule CpuPlacementDemo do
     x * k
   end
 
-  defhls avg(w :: window(u8, 2)) :: u9 do
-    w[0] + w[1]
+  defhls avg(w :: list(u8, 2)) :: u9 do
+    Enum.at(w, 0) + Enum.at(w, 1)
   end
 
   # a generated kernel: the last two elements, every second one
   definstance pairs(x), on: :cpu do
-    x |> window(2) |> every(2) |> map(&avg/1)
+    x |> chunk_every(2, 2, :discard) |> map(&avg/1)
   end
 
   definstance summing(x), on: :cpu do

@@ -31,7 +31,7 @@ gateware/soc.py is atomvm-tang25k's AtomVMSoC with elixir-hls' LiteX SoC backend
   is readable (`:hwstream.peek/1`).
 * The kernels are wrapped in elixir-hls' stream adapters (priv/verilog).
 * The LiteX backend's built-in blocks (every module gets them): `ticks(rate)` (a source of
-  words at `rate` per second), `discard()` (a sink doing nothing with the words) and `hold(name)` (a sink keeping the
+  words at `rate` per second), `run()` (a sink doing nothing with the words, as `Stream.run`) and `hold(name)` (a sink keeping the
   latest word as a level).
 * Block packages for the board's parts: `use EHLS, blocks: [...]`, found through the
   application's hls.env:
