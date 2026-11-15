@@ -85,9 +85,9 @@ defmodule CpuEndsDemo do
     end
     check("a call waits in its process only (#{t1 - t0} ms, #{ticks} ticks meanwhile)", byte_size(three) == 12 and ticks >= 2)
 
-    # emit: the size must be said
-    check("emit: f(bin) is refused", raises(fn -> halver(bin) end) == :out_size_needed)
-    check("emit: out:", byte_size(halver(bin, out: 16)) == 64)
+    # a list as the output: the size must be said
+    check("a list as the output: f(bin) is refused", raises(fn -> halver(bin) end) == :out_size_needed)
+    check("a list as the output: out:", byte_size(halver(bin, out: 16)) == 64)
 
     # input only
     sink(:stop)

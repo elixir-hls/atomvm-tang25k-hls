@@ -43,7 +43,7 @@ gateware/soc.py is atomvm-tang25k's AtomVMSoC with elixir-hls' LiteX SoC backend
   `gateware/<module>.py` (`BLOCKS`, `PERIPHERALS`, `configure(options)`), `src/**/*.c`
   (NIFs inside `#if __has_include("<x>_csr.h")`) and `csr_headers.json`.
 
-The board's LEDs and buttons are parts for `EHLS.GPIO` (elixir-hls docs/reference.md), described in
+The board's LEDs and buttons are parts for `EHLS.GPIO` (its documentation on HexDocs), described in
 `board_gpio.json`: `use EHLS, blocks: [{EHLS.GPIO, board: [:led0, :led1, :button0, :button1]}]`.
 An application using one of them gets their pins for its circuit, so the base SoC's LEDs and
 buttons, and AtomVM's `gpio` module, are not in that SoC (`examples/lib/gpio_demo.ex`).
@@ -118,9 +118,9 @@ check and a last line such as `PUSH OK`. Each needs its own SoC: build the kerne
   `call_demo.ex` (an instance called inside an instance).
 - **The CPU ends:** `cpu_ends_demo.ex`, `cpu_ends_demo2.ex`, `cpu_ends_demo3.ex` (calls, messages, buffers, `overflow:`);
   `packed_demo.ex` (elements packed in binaries); `push_demo.ex` (one element at a time, `f(:send, :x, value)`).
-- **Events:** `events_demo.ex` (`broadcast` / `EHLS.PubSub.subscribe`); `subscribe_demo.ex` (an instance receiving events);
+- **Events:** `events_demo.ex` (`EHLS.PubSub.broadcast` / `EHLS.PubSub.subscribe`); `subscribe_demo.ex` (an instance receiving events);
   `changes_demo.ex` (a value's changes, `filter`); `event_options_demo.ex` (`active:`, `timestamps:`); `agent_demo.ex` (one
-  state for several lines, `agent` / `get_and_update`).
+  state for several lines, `EHLS.Agent.start_link` / `update` / `get_and_update`).
 - **Pins:** `gpio_demo.ex` (the board's LEDs and buttons: LED 0 blinks, each edge of a button an event from an instance,
   printed with its time, LED 1 follows button 0); `button_counter.ex` (a counter of presses in the FPGA with a debounce,
   its low bit on an LED, without the CPU).
