@@ -108,11 +108,26 @@ Run it when build_soc.sh reports a shortfall or after a large change.
 
 ## Examples
 
-`examples/` is an application: `gpio_demo.ex` (the board's LEDs and buttons through `EHLS.GPIO`:
-LED 0 blinks, LED 1 follows button 0, every edge of a button is a message, printed), `button_counter.ex` (a counter of button presses in
-the FPGA with a debounce function, its low bit on an LED, without the CPU), `hello.ex`, and on the CPU ends: `cpu_ends_demo.ex`, `cpu_ends_demo2.ex`, `cpu_ends_demo3.ex`, `packed_demo.ex` (elements
-packed in binaries), `stream_fn_demo.ex`. Each is its own SoC, so `scripts/sweep_soc.sh` finds its placement: `GW_PLACE=3`,
-`3`, `2`, default and `3` met the timing on 2026-11-07.
+`examples/` is one application whose `lib/` holds many examples, each a module with a `start/0`. Most print one line per
+check and a last line such as `PUSH OK`. Each needs its own SoC: build the kernels of that one file (below).
+
+- **Functions and values:** `hello.ex`; `kernel_demo.ex` (a `defhls` on the CPU and as a circuit); `level_demo.ex`
+  (instances of levels: a call writes, the result is held); `level_wire_demo.ex` (a level wired into a function in a
+  stream); `level_pin_demo.ex` (a pin's level wired in); `stream_fn_demo.ex` (a stream function on the CPU and in the FPGA).
+- **Streams:** `join_demo.ex` and `join_graph_demo.ex` (`zip_with`, joins anywhere); `fork_demo.ex` (a stream used twice);
+  `call_demo.ex` (an instance called inside an instance).
+- **The CPU ends:** `cpu_ends_demo.ex`, `cpu_ends_demo2.ex`, `cpu_ends_demo3.ex` (calls, messages, buffers, `overflow:`);
+  `packed_demo.ex` (elements packed in binaries); `push_demo.ex` (one element at a time, `f(:send, :x, value)`).
+- **Events:** `events_demo.ex` (`broadcast` / `EHLS.subscribe`); `subscribe_demo.ex` (an instance receiving events);
+  `changes_demo.ex` (a value's changes, `filter`); `event_options_demo.ex` (`active:`, `timestamps:`); `agent_demo.ex` (one
+  state for several lines, `agent` / `get_and_update`).
+- **Pins:** `gpio_demo.ex` (the board's LEDs and buttons: LED 0 blinks, each edge of a button an event from an instance,
+  printed with its time, LED 1 follows button 0); `button_counter.ex` (a counter of presses in the FPGA with a debounce,
+  its low bit on an LED, without the CPU).
+- **The CPU:** `cpu_placement_demo.ex` (instances placed on the CPU, in Elixir and as C, and the time per element);
+  `cpu_levels_demo.ex` (a function on the CPU with a level wired in); `server_demo.ex` (`EHLS.Server` owning instances).
+
+`scripts/sweep_soc.sh` finds a placement where the default one does not meet the timing.
 
 ```sh
 cd examples && ../scripts/build_kernel.sh lib/gpio_demo.ex && ../scripts/build_soc.sh
