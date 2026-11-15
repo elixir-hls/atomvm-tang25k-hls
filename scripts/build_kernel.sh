@@ -18,4 +18,7 @@ done
 FILES=()
 for f in "$@"; do FILES+=("$(realpath "$f")"); done
 ehls_mix ehls.compile --out "$OUT" "${WITH[@]}" "${FILES[@]}"
-ehls_mix ehls.compile --target cpu --out "$OUT" "${WITH[@]}" "${FILES[@]}"
+# (an application without a defhls function has no kernel to make C of)
+if python3 -c 'import json, sys; sys.exit(0 if json.load(open(sys.argv[1])) else 1)' "$OUT/hw/kernels.json"; then
+    ehls_mix ehls.compile --target cpu --out "$OUT" "${WITH[@]}" "${FILES[@]}"
+fi
