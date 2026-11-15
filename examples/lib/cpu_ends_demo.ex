@@ -118,6 +118,8 @@ defmodule CpuEndsDemo do
 
     # one at a time
     :ok = slow(:request, :out, 100)
+    # an end takes one more while one is in flight; beyond that :busy
+    :ok = slow(:request, :out, 1)
     check(":busy as an answer", slow(:request, :out, 1) == {:error, :busy})
     check(":busy raised", raises(fn -> slow(:out, 1) end) == :busy)
     slow(:stop)
