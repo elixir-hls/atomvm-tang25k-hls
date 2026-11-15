@@ -1,7 +1,7 @@
 defmodule AgentDemo do
   @moduledoc """
-  One state for several lines (elixir-hls): `n = agent(0)`, set from an instance of values by one line
-  (`update`), counted on 200 times a second by another (`get_and_update`), each count an event. The counts
+  One state for several lines (elixir-hls): `{:ok, n} = EHLS.Agent.start_link(0)`, set from an instance of values by
+  one line (`EHLS.Agent.update`), counted on 200 times a second by another (`EHLS.Agent.get_and_update`), each count an event. The counts
   go up by one, and after a set go on from the value set: one state, one update at a time. `AGENT OK` at the
   end.
   """
@@ -20,9 +20,9 @@ defmodule AgentDemo do
   end
 
   definstance panel do
-    n = agent(0)
-    changes(k_hw(:value)) |> update(n, &set_n/2)
-    ticks(200) |> get_and_update(n, &inc_n/2) |> broadcast(:count)
+    {:ok, n} = EHLS.Agent.start_link(0)
+    changes(k_hw(:value)) |> EHLS.Agent.update(n, &set_n/2)
+    ticks(200) |> EHLS.Agent.get_and_update(n, &inc_n/2) |> broadcast(:count)
   end
 
   def start do
