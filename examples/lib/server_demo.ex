@@ -23,7 +23,7 @@ defmodule ServerDemo do
   end
 
   definstance watcher do
-    changes(k_hw(:value)) |> broadcast(:k)
+    changes(k_hw(:value)) |> EHLS.PubSub.broadcast(:k)
   end
 
   definstance cut(words) do

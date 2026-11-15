@@ -1,7 +1,7 @@
 defmodule EventsDemo do
   @moduledoc """
   Events (elixir-hls): an instance makes each element of a stream an event of a topic with
-  broadcast(topic); a process receives them with EHLS.subscribe(topic) as {topic, value} messages.
+  EHLS.PubSub.broadcast(topic); a process receives them with EHLS.PubSub.subscribe(topic) as {topic, value} messages.
   `ticker` counts 100 times a second; `echo` negates what the CPU gives and publishes it as well.
   """
   use EHLS
@@ -15,12 +15,12 @@ defmodule EventsDemo do
   end
 
   definstance ticker do
-    ticks(100) |> transform(0, &count/2) |> broadcast(:tick)
+    ticks(100) |> transform(0, &count/2) |> EHLS.PubSub.broadcast(:tick)
   end
 
   definstance echo(x) do
     y = x |> map(&neg/1)
-    y |> broadcast(:negated)
+    y |> EHLS.PubSub.broadcast(:negated)
     y |> map(&neg/1)
   end
 
@@ -32,11 +32,11 @@ defmodule EventsDemo do
 
   defp run do
     # events from now on: nothing gathered before the subscription
-    :ok = EHLS.subscribe(:tick)
+    :ok = EHLS.PubSub.subscribe(:tick)
     t0 = :erlang.monotonic_time(:microsecond)
     ticks = for _ <- 1..20, do: receive_tick()
     t1 = :erlang.monotonic_time(:microsecond)
-    :ok = EHLS.unsubscribe(:tick)
+    :ok = EHLS.PubSub.unsubscribe(:tick)
     values = for {n, _} <- ticks, do: n
     show("20 ticks, one after another", consecutive?(values))
     show("first values", :lists.sublist(values, 5))
@@ -49,13 +49,13 @@ defmodule EventsDemo do
     # another process subscribes too: both get every event
     me = self()
     other = spawn(fn ->
-      :ok = EHLS.subscribe(:negated)
+      :ok = EHLS.PubSub.subscribe(:negated)
       send(me, :ready)
       got = for _ <- 1..3, do: (receive do {:negated, v} -> v after 2000 -> :none end)
       send(me, {:other, got})
     end)
     receive do :ready -> :ok end
-    :ok = EHLS.subscribe(:negated)
+    :ok = EHLS.PubSub.subscribe(:negated)
     show("echo([1, -2, 300]) gives back", echo([1, -2, 300]))
     mine = for _ <- 1..3, do: (receive do {:negated, v} -> v after 2000 -> :none end)
     show("events of :negated here", mine)

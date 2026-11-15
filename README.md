@@ -118,7 +118,7 @@ check and a last line such as `PUSH OK`. Each needs its own SoC: build the kerne
   `call_demo.ex` (an instance called inside an instance).
 - **The CPU ends:** `cpu_ends_demo.ex`, `cpu_ends_demo2.ex`, `cpu_ends_demo3.ex` (calls, messages, buffers, `overflow:`);
   `packed_demo.ex` (elements packed in binaries); `push_demo.ex` (one element at a time, `f(:send, :x, value)`).
-- **Events:** `events_demo.ex` (`broadcast` / `EHLS.subscribe`); `subscribe_demo.ex` (an instance receiving events);
+- **Events:** `events_demo.ex` (`broadcast` / `EHLS.PubSub.subscribe`); `subscribe_demo.ex` (an instance receiving events);
   `changes_demo.ex` (a value's changes, `filter`); `event_options_demo.ex` (`active:`, `timestamps:`); `agent_demo.ex` (one
   state for several lines, `agent` / `get_and_update`).
 - **Pins:** `gpio_demo.ex` (the board's LEDs and buttons: LED 0 blinks, each edge of a button an event from an instance,

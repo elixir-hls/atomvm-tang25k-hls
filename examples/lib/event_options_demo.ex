@@ -11,7 +11,7 @@ defmodule EventOptionsDemo do
   end
 
   definstance watcher do
-    changes(k_hw(:value)) |> broadcast(:k)
+    changes(k_hw(:value)) |> EHLS.PubSub.broadcast(:k)
   end
 
   def start do
@@ -35,7 +35,7 @@ defmodule EventOptionsDemo do
   end
 
   defp checks do
-    :ok = EHLS.subscribe(:k, active: :once, timestamps: true)
+    :ok = EHLS.PubSub.subscribe(:k, active: :once, timestamps: true)
     t0 = :erlang.monotonic_time(:microsecond)
     k_hw(5)
     t1 = :erlang.monotonic_time(:microsecond)
@@ -45,15 +45,15 @@ defmodule EventOptionsDemo do
     k_hw(6)
     k_hw(7)
     check("kept while not asked", events() == [])
-    :ok = EHLS.subscribe(:k, active: 2)
+    :ok = EHLS.PubSub.subscribe(:k, active: 2)
     check("asked again: the kept ones, in order", events() == [{:k, 6}, {:k, 7}])
 
     # more than 16 while paused: the lost counted first
-    :ok = EHLS.subscribe(:k, active: :once)
+    :ok = EHLS.PubSub.subscribe(:k, active: :once)
     k_hw(100)
     _ = events()
     for v <- 101..120, do: k_hw(v)
-    :ok = EHLS.subscribe(:k)
+    :ok = EHLS.PubSub.subscribe(:k)
     got = events()
     check("lost said first, then the 16 kept (#{inspect(hd(got))})", hd(got) == {:ehls_lost, :k, 4} and tl(got) == for(v <- 101..116, do: {:k, v}))
 

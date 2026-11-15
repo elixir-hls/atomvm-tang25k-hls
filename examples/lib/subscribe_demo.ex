@@ -15,15 +15,15 @@ defmodule SubscribeDemo do
   end
 
   definstance ticker do
-    ticks(100) |> transform(0, &count/2) |> broadcast(:tick)
+    ticks(100) |> transform(0, &count/2) |> EHLS.PubSub.broadcast(:tick)
   end
 
   definstance doubler do
-    subscribe(:tick) |> map(&dbl/1) |> broadcast(:doubled)
+    EHLS.PubSub.subscribe(:tick) |> map(&dbl/1) |> EHLS.PubSub.broadcast(:doubled)
   end
 
   definstance last do
-    subscribe(:doubled) |> map(&dbl/1) |> hold(:v)
+    EHLS.PubSub.subscribe(:doubled) |> map(&dbl/1) |> hold(:v)
   end
 
   def start do
@@ -33,8 +33,8 @@ defmodule SubscribeDemo do
   end
 
   defp run do
-    :ok = EHLS.subscribe(:tick)
-    :ok = EHLS.subscribe(:doubled)
+    :ok = EHLS.PubSub.subscribe(:tick)
+    :ok = EHLS.PubSub.subscribe(:doubled)
     # what came before both subscriptions were in place
     :timer.sleep(30)
     flush()
