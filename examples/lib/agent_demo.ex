@@ -7,11 +7,11 @@ defmodule AgentDemo do
   """
   use EHLS
 
-  defhls set_n(k :: u16, _n :: state(u16)) :: u16 do
+  defhls set_n(k :: u16, _n :: u16) :: {u16, u16} do
     {k, k}
   end
 
-  defhls inc_n(_tick :: u32, n :: state(u16)) :: u16 do
+  defhls inc_n(_tick :: u32, n :: u16) :: {u16, u16} do
     {n + 1, n + 1}
   end
 

@@ -7,7 +7,7 @@ defmodule CpuEndsDemo2 do
   import Bitwise
 
   # a running sum: the state goes on from word to word
-  defhls sum(x :: u32, s :: state(u32)) :: u32 do
+  defhls sum(x :: u32, s :: u32) :: {u32, u32} do
     {s + x, s + x}
   end
 
@@ -19,7 +19,7 @@ defmodule CpuEndsDemo2 do
     w[0] + w[1] + w[2] + w[3]
   end
 
-  defhls count(_x :: u32, n :: state(u32)) :: u32 do
+  defhls count(_x :: u32, n :: u32) :: {u32, u32} do
     {n, n + 1}
   end
 

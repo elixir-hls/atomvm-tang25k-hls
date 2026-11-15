@@ -6,7 +6,7 @@ defmodule EventsDemo do
   """
   use EHLS
 
-  defhls count(_x :: u32, n :: state(u16)) :: u16 do
+  defhls count(_x :: u32, n :: u16) :: {u16, u16} do
     {n + 1, n + 1}
   end
 

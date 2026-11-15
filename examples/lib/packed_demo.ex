@@ -16,7 +16,7 @@ defmodule PackedDemo do
     {a + 1, b - 1}
   end
 
-  defhls count8(_x :: u32, n :: state(u8)) :: u8 do
+  defhls count8(_x :: u32, n :: u8) :: {u8, u8} do
     {n, n + 1}
   end
 
