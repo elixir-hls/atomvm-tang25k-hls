@@ -7,13 +7,13 @@ defmodule GpioDemo do
 
   # each edge of a button, its new level, an event of the button's topic
   definstance buttons do
-    changes(:button0, :both) |> broadcast(:button0)
-    changes(:button1, :both) |> broadcast(:button1)
+    changes(:button0, :both) |> EHLS.PubSub.broadcast(:button0)
+    changes(:button1, :both) |> EHLS.PubSub.broadcast(:button1)
   end
 
   def start do
-    :ok = EHLS.subscribe(:button0, timestamps: true)
-    :ok = EHLS.subscribe(:button1, timestamps: true)
+    :ok = EHLS.PubSub.subscribe(:button0, timestamps: true)
+    :ok = EHLS.PubSub.subscribe(:button1, timestamps: true)
     IO.puts("gpio: buttons now #{EHLS.GPIO.read(:button0)} #{EHLS.GPIO.read(:button1)}")
     loop(0)
   end

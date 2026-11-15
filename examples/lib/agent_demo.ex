@@ -22,7 +22,7 @@ defmodule AgentDemo do
   definstance panel do
     {:ok, n} = EHLS.Agent.start_link(0)
     changes(k_hw(:value)) |> EHLS.Agent.update(n, &set_n/2)
-    ticks(200) |> EHLS.Agent.get_and_update(n, &inc_n/2) |> broadcast(:count)
+    ticks(200) |> EHLS.Agent.get_and_update(n, &inc_n/2) |> EHLS.PubSub.broadcast(:count)
   end
 
   def start do
@@ -46,7 +46,7 @@ defmodule AgentDemo do
   end
 
   defp checks do
-    :ok = EHLS.subscribe(:count)
+    :ok = EHLS.PubSub.subscribe(:count)
     a = events(300)
     check("counted on by one (#{length(a)} events)", length(a) > 20 and steps(a, []) == [])
 

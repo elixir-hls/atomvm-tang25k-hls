@@ -16,8 +16,8 @@ defmodule ChangesDemo do
 
   definstance watcher do
     y = changes(k_hw(:value))
-    y |> broadcast(:k)
-    y |> filter(&big?/1) |> broadcast(:big)
+    y |> EHLS.PubSub.broadcast(:k)
+    y |> filter(&big?/1) |> EHLS.PubSub.broadcast(:big)
   end
 
   def start do
@@ -27,8 +27,8 @@ defmodule ChangesDemo do
   end
 
   defp run do
-    :ok = EHLS.subscribe(:k)
-    :ok = EHLS.subscribe(:big)
+    :ok = EHLS.PubSub.subscribe(:k)
+    :ok = EHLS.PubSub.subscribe(:big)
     for v <- [5, 5, 200, 7, 150] do
       k_hw(v)
       :timer.sleep(20)
