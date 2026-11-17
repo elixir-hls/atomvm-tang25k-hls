@@ -47,8 +47,8 @@ defmodule CpuPlacementDemo do
     x * k
   end
 
-  defhls avg(w :: list(u8, 2)) :: u9 do
-    Enum.at(w, 0) + Enum.at(w, 1)
+  defhls avg(w :: tuple(u8, 2)) :: u9 do
+    elem(w, 0) + elem(w, 1)
   end
 
   # a generated kernel: the last two elements, every second one

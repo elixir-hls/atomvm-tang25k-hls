@@ -15,11 +15,11 @@ hls_ebin
 erlc -o "$B" $(hls_files lib '*.erl') $(ls "$OUT"/gen/*.erl 2>/dev/null)   # + hw_kernels (build_kernel.sh)
 elixirc -pa "$EHLS_EBIN" -pa "$B" -o "$B" $(hls_files lib '*.ex') > /dev/null
 # from elixir-hls only EHLS (the generated code's helpers: wrap, state, run_cpu), EHLS.GPIO,
-# EHLS.CpuInstance (an instance placed on the CPU), EHLS.Server (a process owning an instance) and EHLS.PubSub
-# (a process receiving a topic's events); the compiler (EHLS.MLIR, EHLS.Pipeline,
+# EHLS.CpuInstance (an instance placed on the CPU), EHLS.Server (a process owning an instance), EHLS.PubSub
+# (a process receiving a topic's events) and EHLS.Agent (an agent's state read by its name); the compiler (EHLS.MLIR, EHLS.Pipeline,
 # EHLS.Blocks, the Mix task) runs on the host
 cp "$EHLS_EBIN/Elixir.EHLS.beam" "$EHLS_EBIN/Elixir.EHLS.GPIO.beam" "$EHLS_EBIN/Elixir.EHLS.CpuInstance.beam" \
-   "$EHLS_EBIN/Elixir.EHLS.Server.beam" "$EHLS_EBIN/Elixir.EHLS.PubSub.beam" "$B/"
+   "$EHLS_EBIN/Elixir.EHLS.Server.beam" "$EHLS_EBIN/Elixir.EHLS.PubSub.beam" "$EHLS_EBIN/Elixir.EHLS.Agent.beam" "$B/"
 BEAMS=("$B"/*.beam)
 if [ "${EMU:-0}" != 1 ]; then
     erl -pa "$HOST_DIR/libs/jit/src/beams" -noshell -s jit_precompile -s init stop \
