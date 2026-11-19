@@ -15,4 +15,12 @@ LOADER_PID=$!
 sleep 1
 openFPGALoader --cable ft2232 --bitstream "$BITSTREAM" > /dev/null 2>&1 || echo "openFPGALoader failed"
 wait "$LOADER_PID"
-tr -d '\r' < "$LOG" | sed -n '/^Starting:/,$p'
+# what the application printed: after the upload (a flash holding another standalone application boots it for a
+# moment first, while the SRAM bitstream loads); without an upload the log's end, to see why
+APP_OUT="$(tr -d '\r' < "$LOG" | awk '/serial boot aborted/ { up = 1; next } up')"
+if [ -n "$APP_OUT" ]; then
+    printf '%s\n' "$APP_OUT" | sed -n '/^Starting:/,$p'
+else
+    echo "run.sh: no upload (the log's end, $LOG):"
+    tr -d '\r' < "$LOG" | tail -n 30
+fi

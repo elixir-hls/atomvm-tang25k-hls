@@ -50,7 +50,28 @@ buttons, and AtomVM's `gpio` module, are not in that SoC (`examples/lib/gpio_dem
 
 ## Applications
 
-An application is a directory with its sources in `lib/` and an `hls.env` naming its block
+An application that is a Mix project with this package as a dependency (`mix ehls.new` makes one) is built
+and run with elixir-hls' Mix tasks; `AtomVMTang25KHLS.Target` (lib/) does their work with the scripts below:
+
+```sh
+mix ehls.setup                   # once for the machine: the base atomvm-tang25k set up in ~/.cache/ehls
+mix ehls.doctor                  # the tools and this machine's paths, what is missing
+mix ehls.build                   # kernels -> soc -> atomvm -> pack, each only when its inputs changed
+mix ehls.run --seconds 20        # build, write AtomVM and atomvmlib when the board lacks them, upload, console
+mix ehls.flash --standalone      # power on -> the app
+mix ehls.console                 # the board's console
+```
+
+A change of the CPU's code only builds the pack again (the circuits' files come out the same, so Gowin does not
+run). The application's options are in `config :elixir_hls`: `target: :tang25k`, `start: MyApp` (else the app's
+name camelized), `gowin: [place: 2]` (GW_PLACE / GW_ROUTE) and `blocks: [...]` (else every dependency that
+depends on elixir-hls). This machine's paths, `GOWIN_HOME`, `UART_PORT`, `ATOMVM_TANG25K`, `ZEPHYR_WORKSPACE`,
+`CIRCT_BIN`, come from the environment, `config :elixir_hls` (kept in a `config/local.exs` not committed),
+`~/.config/ehls/config.exs`, or are found: `~/Gowin_*`, the board's UART in /dev/serial/by-id, the base where
+`mix ehls.setup` set it up (`~/.cache/ehls/atomvm_tang25k-<version>`), `~/zephyrproject`, `hlstool` on `PATH`.
+
+The scripts can also be run by hand. An application is then a directory with its sources in `lib/` and an
+`hls.env` naming its block
 packages (relative to it) and, if it helps the timing, Gowin's placement / routing
 algorithms:
 
