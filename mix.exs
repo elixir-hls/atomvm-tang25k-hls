@@ -6,7 +6,7 @@ defmodule AtomVMTang25KHLS.MixProject do
       app: :atomvm_tang25k_hls,
       version: "0.1.0",
       elixir: "~> 1.18",
-      elixirc_paths: [],
+      elixirc_paths: ["lib"],
       deps: deps()
     ]
   end
