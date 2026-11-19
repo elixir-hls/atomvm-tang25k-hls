@@ -23,8 +23,9 @@ defmodule AtomVMTang25KHLS.Target do
   `ZEPHYR_WORKSPACE` (found as `~/zephyrproject`).
 
   `mix ehls.setup` copies the base, the dependency `atomvm_tang25k`, to the user's cache
-  (`~/.cache/ehls/atomvm_tang25k-<version>`) and runs its setup_litex.sh, setup_atomvm.sh and build_host.sh there, once
-  for the machine: `mix deps.get` leaves it alone, and the applications of that version share it.
+  (`~/.cache/ehls/atomvm_tang25k-<version>`) and runs its setup_litex.sh (`--venv`: LiteX in a virtual environment
+  there, not in the user's Python), setup_atomvm.sh and build_host.sh there, once for the machine: `mix deps.get`
+  leaves it alone, and the applications of that version share it.
   """
   @behaviour EHLS.Target
 
@@ -118,12 +119,13 @@ defmodule AtomVMTang25KHLS.Target do
         File.mkdir_p!(dest)
 
         # the package's files, not what a setup of the dependency itself made there (deps/, ext/, build/)
-        for f <- File.ls!(src), f not in ~w(deps ext build _build .git .elixir_ls),
+        for f <- File.ls!(src), f not in ~w(deps ext build venv _build .git .elixir_ls),
             do: File.cp_r!(Path.join(src, f), Path.join(dest, f))
 
         Mix.shell().info("setting the base up in #{dest} (LiteX, AtomVM, the host tools: some tens of minutes)")
-        for s <- ~w(setup_litex.sh setup_atomvm.sh build_host.sh),
-            do: EHLS.Build.cmd!(Path.join([dest, "scripts", s]), [], cd: dest)
+        # LiteX into a virtual environment of the base's own (venv/): the machine's Python is left alone
+        for {s, args} <- [{"setup_litex.sh", ["--venv"]}, {"setup_atomvm.sh", []}, {"build_host.sh", []}],
+            do: EHLS.Build.cmd!(Path.join([dest, "scripts", s]), args, cd: dest)
         set_up?(dest) || Mix.raise("the base's setup ran but #{dest} has no host tools (build/host/tools/packbeam)")
         Mix.shell().info("the base is set up in #{dest}")
     end
