@@ -17,7 +17,7 @@ build() {   # build <place> <route>
     [ "$1" != default ] && env+=(GW_PLACE="$1")
     [ "$2" != default ] && env+=(GW_ROUTE="$2")
     env -u GW_PLACE -u GW_ROUTE "${env[@]}" SOC_DIR="$SW/$name" \
-        python3 "$ROOT/gateware/soc.py" --build --output-dir "$SW/$name" > "$SW/$name.log" 2>&1
+        "$LITEX_PYTHON" "$ROOT/gateware/soc.py" --build --output-dir "$SW/$name" > "$SW/$name.log" 2>&1
     python3 "$EHLS_GOWIN/check_timing.py" "$SW/$name" > "$SW/$name.timing" 2>&1
 }
 for p in ${SWEEP_PLACES:-default 1 2 3}; do

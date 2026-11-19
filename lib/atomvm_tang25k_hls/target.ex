@@ -19,8 +19,13 @@ defmodule AtomVMTang25KHLS.Target do
 
   The machine's settings (`EHLS.Machine`): `GOWIN_HOME` (found as `~/Gowin_*` or from `gw_sh` on `PATH`),
   `UART_PORT` (found in /dev/serial/by-id: the FT2232's second interface; else the scripts' /dev/ttyUSB1),
-  `ATOMVM_TANG25K` (the base; found as the dependency once it is set up), `ZEPHYR_WORKSPACE` (found as
-  `~/zephyrproject`).
+  `ATOMVM_TANG25K` (the base; found where `mix ehls.setup` set it up, else as the dependency once it is set up),
+  `ZEPHYR_WORKSPACE` (found as `~/zephyrproject`).
+
+  `mix ehls.setup` copies the base, the dependency `atomvm_tang25k`, to the user's cache
+  (`~/.cache/ehls/atomvm_tang25k-<version>`) and runs its setup_litex.sh (`--venv`: LiteX in a virtual environment
+  there, not in the user's Python), setup_atomvm.sh and build_host.sh there, once for the machine: `mix deps.get`
+  leaves it alone, and the applications of that version share it.
   """
   @behaviour EHLS.Target
 
@@ -100,6 +105,48 @@ defmodule AtomVMTang25KHLS.Target do
   end
 
   @impl true
+  def setup(_project, opts) do
+    src =
+      EHLS.Project.dep_path(:atomvm_tang25k) || Mix.raise("the base atomvm_tang25k is not a dependency (mix deps.get)")
+    dest = set_up_dir()
+
+    cond do
+      set_up?(dest) and not opts[:force] ->
+        Mix.shell().info("the base is set up in #{dest} (mix ehls.setup --force: again)")
+
+      true ->
+        if opts[:force], do: File.rm_rf!(dest)
+        File.mkdir_p!(dest)
+
+        # the package's files, not what a setup of the dependency itself made there (deps/, ext/, build/)
+        for f <- File.ls!(src), f not in ~w(deps ext build venv _build .git .elixir_ls),
+            do: File.cp_r!(Path.join(src, f), Path.join(dest, f))
+
+        Mix.shell().info("setting the base up in #{dest} (LiteX, AtomVM, the host tools: some tens of minutes)")
+        # LiteX into a virtual environment of the base's own (venv/): the machine's Python is left alone
+        for {s, args} <- [{"setup_litex.sh", ["--venv"]}, {"setup_atomvm.sh", []}, {"build_host.sh", []}],
+            do: EHLS.Build.cmd!(Path.join([dest, "scripts", s]), args, cd: dest)
+        set_up?(dest) || Mix.raise("the base's setup ran but #{dest} has no host tools (build/host/tools/packbeam)")
+        Mix.shell().info("the base is set up in #{dest}")
+    end
+
+    :ok
+  end
+
+  # where mix ehls.setup puts the base: one per version of the dependency
+  defp set_up_dir do
+    vsn =
+      case Application.load(:atomvm_tang25k) do
+        r when r in [:ok, {:error, {:already_loaded, :atomvm_tang25k}}] ->
+          to_string(Application.spec(:atomvm_tang25k, :vsn))
+
+        _ -> "dev"
+      end
+
+    Path.join(EHLS.Machine.cache_dir(), "atomvm_tang25k-#{vsn}")
+  end
+
+  @impl true
   def flash_images(project) do
     %{
       bitstream: Path.join(project.root, @bitstream),
@@ -163,13 +210,13 @@ defmodule AtomVMTang25KHLS.Target do
          d = EHLS.Machine.get(project, :zephyr_workspace) || Path.expand("~/zephyrproject")
          if File.dir?(d), do: :ok, else: {:error, "no #{d}"}
        end},
-      {"atomvm-tang25k set up (ATOMVM_TANG25K)",
+      {"the base atomvm-tang25k set up (ATOMVM_TANG25K; mix ehls.setup)",
        fn ->
          b = base(project)
 
          cond do
-           b == nil -> {:error, "not a dependency and ATOMVM_TANG25K not set"}
-           not set_up?(b) -> {:error, "#{b}: run its scripts/setup_litex.sh, setup_atomvm.sh, build_host.sh"}
+           b == nil -> {:error, "not set up: run mix ehls.setup"}
+           not set_up?(b) -> {:error, "#{b} is not set up: run mix ehls.setup"}
            true -> :ok
          end
        end},
@@ -252,9 +299,9 @@ defmodule AtomVMTang25KHLS.Target do
     end
   end
 
+  # where mix ehls.setup set it up, else the dependency itself set up in place (a git or path dependency)
   defp find_base do
-    d = EHLS.Project.dep_path(:atomvm_tang25k)
-    if d && set_up?(d), do: d
+    Enum.find([set_up_dir(), EHLS.Project.dep_path(:atomvm_tang25k)], &(&1 && set_up?(&1)))
   end
 
   defp find_zephyr do
