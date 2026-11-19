@@ -8,7 +8,7 @@ defmodule AtomVMTang25KHLS.Target do
 
   | step | script | runs again when |
   |---|---|---|
-  | `kernels` | build_kernel.sh (the files of lib/ with `use EHLS`) | lib/ or the packages' Elixir changed |
+  | `kernels` | build_kernel.sh (the files of lib/, when one has `use EHLS`) | lib/ or the packages' Elixir changed |
   | `soc` | build_soc.sh (Gowin) | the circuits' files (build/hw, not the simulations), the gateware or the options changed |
   | `atomvm` | build_atomvm.sh | the SoC's CSR map or the NIFs' C changed |
   | `pack` | build_ex.sh (the start module) | lib/ or the generated Erlang changed |
@@ -205,10 +205,14 @@ defmodule AtomVMTang25KHLS.Target do
     if ready == [], do: Enum.reverse(done) ++ todo, else: order(rest, tree, Enum.reverse(ready) ++ done)
   end
 
+  # every file of lib/ when one has `use EHLS` (a kernel's module may need the others at its compile: a table's
+  # constants from another module), else none (no circuit)
   defp kernel_files(project) do
-    for f <- Path.wildcard(Path.join(project.root, "lib/**/*.ex")) |> Enum.sort(),
-        File.read!(f) =~ ~r/^\s*use EHLS\b/m,
-        do: Path.relative_to(f, project.root)
+    files = Path.wildcard(Path.join(project.root, "lib/**/*.ex")) |> Enum.sort()
+
+    if Enum.any?(files, &(File.read!(&1) =~ ~r/^\s*use EHLS\b/m)),
+      do: Enum.map(files, &Path.relative_to(&1, project.root)),
+      else: []
   end
 
   defp base(project), do: EHLS.Machine.get(project, :atomvm_tang25k) || EHLS.Project.dep_path(:atomvm_tang25k)
