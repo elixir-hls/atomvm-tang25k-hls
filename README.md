@@ -57,11 +57,14 @@ and run with elixir-hls' Mix tasks; `AtomVMTang25KHLS.Target` (lib/) does their 
 mix ehls.setup                   # once for the machine: the base atomvm-tang25k set up in ~/.cache/ehls
 mix ehls.doctor                  # the tools and this machine's paths, what is missing
 mix ehls.build                   # kernels -> soc -> atomvm -> pack, each only when its inputs changed
-mix ehls.run --seconds 20        # build, write AtomVM and atomvmlib when the board lacks them, upload, console
+mix ehls.run --seconds 20        # build, write AtomVM, atomvmlib and the app when the board lacks them, boot, console
+                                 # (for 20 s; without --seconds until Ctrl+C)
 mix ehls.flash --standalone      # power on -> the app
 mix ehls.console                 # the board's console
 ```
 
+`mix ehls.run` boots the app from the SPI flash: it writes the pack there only when it changed (about 25 s for
+900 KB, with the verify), instead of sending it over the 115200-baud UART on every run (about 10 s per 100 KB).
 A change of the CPU's code only builds the pack again (the circuits' files come out the same, so Gowin does not
 run). The application's options are in `config :elixir_hls`: `target: :tang25k`, `start: MyApp` (else the app's
 name camelized), `gowin: [place: 2]` (GW_PLACE / GW_ROUTE) and `blocks: [...]` (else every dependency that
@@ -93,7 +96,8 @@ $H/build_soc.sh                              # the SoC (kernels, pipelines, peri
 $H/build_atomvm.sh                           # AtomVM with the NIFs -> build/app_atomvm/
 $H/flash.sh vm lib                           # AtomVM + atomvmlib into the SPI flash
 $H/build_ex.sh my_app MyApp                  # the app pack (start MyApp) -> build/my_app.avm
-SECONDS_RUN=20 $H/run.sh my_app              # upload, boot, console for 20 s
+SECONDS_RUN=20 $H/run.sh my_app              # upload over the UART, boot, console for 20 s
+$H/flash.sh app my_app && APP_FROM=flash SECONDS_RUN=20 $H/run.sh my_app   # or the app from the flash
 $H/flash.sh bitstream app my_app             # standalone: power on -> the app
 ```
 
