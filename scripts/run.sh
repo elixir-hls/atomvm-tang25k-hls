@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Run build/<name>.avm on the board and print its console as it comes, for SECONDS_RUN (default 10)
-# after the application starts: loads build/soc's bitstream to SRAM; AtomVM and atomvmlib boot from
+# Run build/<name>.avm on the board and print its console as it comes, for SECONDS_RUN (default 10;
+# 0: until Ctrl+C) after the application starts: loads build/soc's bitstream to SRAM; AtomVM and atomvmlib boot from
 # the SPI flash (scripts/flash.sh vm lib; the AtomVM image must be built for this SoC).
 #   APP_FROM=serial (default): the pack goes over the 115200-baud UART (LiteX serial boot, about
 #     10 s per 100 KB) into the SDRAM staging slot; nothing of the flash changes.
 #   APP_FROM=flash: the pack is the one in the flash (scripts/flash.sh app <name>, which mix ehls.run
 #     writes only when it changed); AtomVM's loader copies it when no serial load is there.
-# usage: [SECONDS_RUN=10] [APP_FROM=serial|flash] scripts/run.sh <name>
+# usage: [SECONDS_RUN=10|0] [APP_FROM=serial|flash] scripts/run.sh <name>
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 NAME="${1:?usage: $0 <name>}"
@@ -27,7 +27,7 @@ s.reset_input_buffer()
 seen, end, t0 = b"", None, time.time()
 while True:
     now = time.time()
-    if end is None and now - t0 > seconds + 30:
+    if seconds > 0 and end is None and now - t0 > seconds + 30:
         break
     if end is not None and now > end:
         break
@@ -36,7 +36,7 @@ while True:
         sys.stdout.buffer.write(b); sys.stdout.flush(); log.write(b)
         if end is None:
             seen = (seen + b)[-64:]
-            if b"Starting:" in seen:
+            if seconds > 0 and b"Starting:" in seen:
                 end = time.time() + seconds
 ' "$UART_PORT" "$SECONDS_RUN" "$LOG"
 }
@@ -56,7 +56,7 @@ show() {
 case "${APP_FROM:-serial}" in
 serial)
     python3 "$BASE/scripts/load_app.py" "$UART_PORT" "$OUT/$NAME.avm" \
-        --seconds "$SECONDS_RUN" --log "$LOG" | show "" & ;;
+        --seconds "$( [ "$SECONDS_RUN" = 0 ] && echo 1e9 || echo "$SECONDS_RUN")" --log "$LOG" | show "" & ;;
 flash)
     console | show 1 & ;;
 *)

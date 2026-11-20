@@ -175,7 +175,8 @@ defmodule AtomVMTang25KHLS.Target do
   @impl true
   def run(project, opts) do
     script(project, "run.sh", [Atom.to_string(project.app)], [
-      {"SECONDS_RUN", to_string(opts[:seconds] || 10)},
+      # no seconds: until Ctrl+C
+      {"SECONDS_RUN", to_string(opts[:seconds] || 0)},
       {"APP_FROM", "flash"}
     ])
   end

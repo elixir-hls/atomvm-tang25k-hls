@@ -58,6 +58,7 @@ mix ehls.setup                   # once for the machine: the base atomvm-tang25k
 mix ehls.doctor                  # the tools and this machine's paths, what is missing
 mix ehls.build                   # kernels -> soc -> atomvm -> pack, each only when its inputs changed
 mix ehls.run --seconds 20        # build, write AtomVM, atomvmlib and the app when the board lacks them, boot, console
+                                 # (for 20 s; without --seconds until Ctrl+C)
 mix ehls.flash --standalone      # power on -> the app
 mix ehls.console                 # the board's console
 ```
