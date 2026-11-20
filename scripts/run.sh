@@ -14,10 +14,13 @@ SHOWN="$OUT/run_$NAME.shown"
 rm -f "$SHOWN"
 python3 "$BASE/scripts/load_app.py" "$UART_PORT" "$OUT/$NAME.avm" \
     --seconds "${SECONDS_RUN:-10}" --log "$LOG" |
-    awk -v shown="$SHOWN" '{ sub(/\r$/, "") }
-        /serial boot aborted/ { up = 1; next }
-        up && /^Starting:/ { on = 1; printf "" > shown }
-        on { print; fflush() }' &
+    { up=; on=   # bash reads line by line (mawk would hold its input until the end)
+      while IFS= read -r line; do
+          line="${line%$'\r'}"
+          if [ -z "$up" ]; then [[ "$line" == *"serial boot aborted"* ]] && up=1; continue; fi
+          [ -z "$on" ] && [[ "$line" == Starting:* ]] && { on=1; : > "$SHOWN"; }
+          [ -n "$on" ] && printf '%s\n' "$line"
+      done; } &
 LOADER_PID=$!
 sleep 1
 openFPGALoader --cable ft2232 --bitstream "$BITSTREAM" > /dev/null 2>&1 || echo "openFPGALoader failed"
