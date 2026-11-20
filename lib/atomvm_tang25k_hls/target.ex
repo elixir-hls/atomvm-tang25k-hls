@@ -157,7 +157,9 @@ defmodule AtomVMTang25KHLS.Target do
   end
 
   @impl true
-  def run_needs, do: [:vm, :lib]
+  # the application too: run.sh boots it from the flash (APP_FROM=flash), written only when it changed, instead of
+  # sending it over the 115200-baud UART on every run
+  def run_needs, do: [:vm, :lib, :app]
 
   @impl true
   def flash(project, parts, _opts) do
@@ -172,7 +174,10 @@ defmodule AtomVMTang25KHLS.Target do
 
   @impl true
   def run(project, opts) do
-    script(project, "run.sh", [Atom.to_string(project.app)], [{"SECONDS_RUN", to_string(opts[:seconds] || 10)}])
+    script(project, "run.sh", [Atom.to_string(project.app)], [
+      {"SECONDS_RUN", to_string(opts[:seconds] || 10)},
+      {"APP_FROM", "flash"}
+    ])
   end
 
   @impl true
