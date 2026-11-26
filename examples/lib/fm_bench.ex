@@ -66,8 +66,8 @@ defmodule FMBench do
   reads the pilot PLL's and the level's states and writes the levels with the values they have (the output
   unchanged), and the states read at the end against the CPU's; 200 streams while the states are read without a
   pause (a hold anywhere in an element); the stream sent in two calls (the state
-  goes on); a stop in the middle of a stream and a start at once (the call waiting times out, what follows as from
-  reset).
+  goes on); a stop in the middle of a stream, a start and a stream sent at once (as from reset; the stopped call
+  times out), and 40 times so, stopped at another point each time.
 
   The functions are the radio's; one change: the pilot PLL's window is 2^10 MPX samples (2^14 in the
   radio), so that the short input goes through several window ends.
@@ -326,6 +326,8 @@ defmodule FMBench do
     :timer.sleep(3)
     bench(:stop)
     bench(:start)
+    # sent at once, while the stages may still finish what they had begun: as from reset
+    run("stereo sent right after the stop and start", @stereo, stereo, 256, 256, false)
     stopped = receive do
       {:stopped_call, r} -> r
     after
@@ -333,11 +335,42 @@ defmodule FMBench do
     end
     _ = caller
     # f(:stop) cancels what is in flight, no message follows: the call waiting for it times out
-    check("a call stopped in the middle ends (#{if is_binary(stopped), do: "it had finished", else: inspect(stopped)})",
+    check("... the call stopped in the middle ends (#{if is_binary(stopped), do: "it had finished", else: inspect(stopped)})",
           stopped == :timeout or is_binary(stopped))
-    run("stereo after the stop and start", @stereo, stereo, 256, 256, false)
+
+    # stopped anywhere in a stream (0 .. 19 ms of its 20), started and a stream sent at once, 40 times
+    {good, why} = stop_start(stereo, 0)
+    check("40 streams stopped anywhere, each followed at once by a whole one: #{good} right#{why}", good == 40)
 
     IO.puts("FM BENCH #{if :erlang.get(:failed) == :undefined, do: "OK", else: "FAILED"}")
+  end
+
+  defp stop_start(_exp, 40), do: {40, ""}
+
+  defp stop_start(exp, i) do
+    restart(256, 256)
+    :ok = bench(:request, :out, byte_size(exp.bin))
+    :ok = bench(:send, :iq, @stereo)
+    :timer.sleep(rem(i * 7, 20))
+    bench(:stop)
+    bench(:start)
+    out = call(@stereo, exp)
+    # what the stopped stream's request may have left: no message after a stop, but drop any
+    flush()
+
+    cond do
+      out == exp.bin -> stop_start(exp, i + 1)
+      is_binary(out) -> {i, ", then #{i + 1} (after #{rem(i * 7, 20)} ms)#{first_difference(out, exp.bin)}"}
+      true -> {i, ", then #{i + 1} (after #{rem(i * 7, 20)} ms): #{inspect(out)}"}
+    end
+  end
+
+  defp flush do
+    receive do
+      {:bench, _, _} -> flush()
+    after
+      0 -> :ok
+    end
   end
 
   defp stress(_exp, n, n), do: {n, ""}
