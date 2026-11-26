@@ -64,7 +64,8 @@ defmodule FMBench do
   The checks, each from a start: a stereo FM signal (FMBenchSignal) at full stereo and full volume; mono
   and a lower volume; pseudo-random bytes at half the blend; the stereo signal again while another process
   reads the pilot PLL's and the level's states and writes the levels with the values they have (the output
-  unchanged), and the states read at the end against the CPU's; the stream sent in two calls (the state
+  unchanged), and the states read at the end against the CPU's; 200 streams while the states are read without a
+  pause (a hold anywhere in an element); the stream sent in two calls (the state
   goes on); a stop in the middle of a stream and a start at once (the call waiting times out, what follows as from
   reset).
 
@@ -84,6 +85,8 @@ defmodule FMBench do
   # in FMBenchRef
   @stereo FMBenchSignal.stereo(16_384)
   @noise FMBenchSignal.noise_bytes(32_768)
+  # streams in the stress check
+  @stress 200
 
   defhls sat16(v :: s32) :: s16 do
     if v > 32767, do: 32767, else: if(v < -32768, do: -32768, else: v)
@@ -299,6 +302,16 @@ defmodule FMBench do
     check("stereo while the states are read and the levels written (#{reads} times)", out == stereo.bin)
     check("... the pilot PLL's state at the end", same_pilot(bench(:state, :pilot), stereo.pilot))
 
+    # many streams while the states are read without a pause: a hold of the pilot PLL's stage falls anywhere in
+    # its elements (the FM radio's stream once stopped so, a kernel and its adapter waiting for each other)
+    reader = spawn(fn -> busy_reader(me, 0) end)
+    {good, why} = stress(stereo, @stress, 0)
+    send(reader, :stop)
+    reads = receive do
+      {:reads, n} -> n
+    end
+    check("#{@stress} streams while the states are read (#{reads} times): #{good} right#{why}", good == @stress)
+
     # in two calls: the stage states go on
     restart(256, 256)
     {split, n1} = FMBenchRef.split()
@@ -325,6 +338,18 @@ defmodule FMBench do
     run("stereo after the stop and start", @stereo, stereo, 256, 256, false)
 
     IO.puts("FM BENCH #{if :erlang.get(:failed) == :undefined, do: "OK", else: "FAILED"}")
+  end
+
+  defp stress(_exp, n, n), do: {n, ""}
+
+  defp stress(exp, n, i) do
+    restart(256, 256)
+
+    case call(@stereo, exp) do
+      out when out == exp.bin -> stress(exp, n, i + 1)
+      out when is_binary(out) -> {i, ", then #{i + 1}#{first_difference(out, exp.bin)}"}
+      e -> {i, ", then #{i + 1}: #{inspect(e)}"}
+    end
   end
 
   # one stream from a start, the levels set before, the output against the CPU's
