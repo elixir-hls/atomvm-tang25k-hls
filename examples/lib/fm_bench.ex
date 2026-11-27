@@ -66,8 +66,8 @@ defmodule FMBench do
   reads the pilot PLL's and the level's states and writes the levels with the values they have (the output
   unchanged), and the states read at the end against the CPU's; 200 streams while the states are read without a
   pause (a hold anywhere in an element); the stream sent in two calls (the state
-  goes on); a stop in the middle of a stream, a start and a stream sent at once (as from reset; the stopped call
-  times out), and 40 times so, stopped at another point each time.
+  goes on); a stop in the middle of a stream, a start and a stream sent at once (as from reset; no message of the
+  stopped one), and 40 times so, stopped at another point each time.
 
   The functions are the radio's; one change: the pilot PLL's window is 2^10 MPX samples (2^14 in the
   radio), so that the short input goes through several window ends.
@@ -298,8 +298,10 @@ defmodule FMBench do
     send(reader, :stop)
     reads = receive do
       {:reads, n} -> n
+    after
+      10_000 -> -1
     end
-    check("stereo while the states are read and the levels written (#{reads} times)", out == stereo.bin)
+    check("stereo while the states are read and the levels written (#{reads} times)", out == stereo.bin and reads > 0)
     check("... the pilot PLL's state at the end", same_pilot(bench(:state, :pilot), stereo.pilot))
 
     # many streams while the states are read without a pause: a hold of the pilot PLL's stage falls anywhere in
@@ -309,8 +311,10 @@ defmodule FMBench do
     send(reader, :stop)
     reads = receive do
       {:reads, n} -> n
+    after
+      10_000 -> -1
     end
-    check("#{@stress} streams while the states are read (#{reads} times): #{good} right#{why}", good == @stress)
+    check("#{@stress} streams while the states are read (#{reads} times): #{good} right#{why}", good == @stress and reads > 0)
 
     # in two calls: the stage states go on
     restart(256, 256)
@@ -320,23 +324,16 @@ defmodule FMBench do
     b = bench(second, out: stereo.n - n1, timeout: 5000)
     check("stereo in two calls (#{n1} + #{stereo.n - n1} frames)", a <> b == stereo.bin)
 
-    # a stop in the middle, a start at once: the next stream as from reset
+    # a stop in the middle, a start and a stream sent at once: as from reset, and no message of the stopped one
     restart(256, 256)
-    caller = spawn(fn -> send(me, {:stopped_call, catch_error(fn -> bench(@stereo, out: stereo.n, timeout: 1000) end)}) end)
+    :ok = bench(:request, :out, stereo.n)
+    :ok = bench(:send, :iq, @stereo)
     :timer.sleep(3)
     bench(:stop)
     bench(:start)
-    # sent at once, while the stages may still finish what they had begun: as from reset
-    run("stereo sent right after the stop and start", @stereo, stereo, 256, 256, false)
-    stopped = receive do
-      {:stopped_call, r} -> r
-    after
-      3000 -> :no_answer
-    end
-    _ = caller
-    # f(:stop) cancels what is in flight, no message follows: the call waiting for it times out
-    check("... the call stopped in the middle ends (#{if is_binary(stopped), do: "it had finished", else: inspect(stopped)})",
-          stopped == :timeout or is_binary(stopped))
+    left = flush(0)
+    run("stereo sent right after a stop in the middle and a start", @stereo, stereo, 256, 256, false)
+    check("... no message of the stopped stream (#{left} before, #{flush(0)} after)", left == 0 and flush(0) == 0)
 
     # stopped anywhere in a stream (0 .. 19 ms of its 20), started and a stream sent at once, 40 times
     {good, why} = stop_start(stereo, 0)
@@ -349,14 +346,14 @@ defmodule FMBench do
 
   defp stop_start(exp, i) do
     restart(256, 256)
-    :ok = bench(:request, :out, byte_size(exp.bin))
+    :ok = bench(:request, :out, exp.n)
     :ok = bench(:send, :iq, @stereo)
     :timer.sleep(rem(i * 7, 20))
     bench(:stop)
     bench(:start)
+    # the stopped stream's messages, if it had finished before the stop, before the next call's
+    _ = flush(0)
     out = call(@stereo, exp)
-    # what the stopped stream's request may have left: no message after a stop, but drop any
-    flush()
 
     cond do
       out == exp.bin -> stop_start(exp, i + 1)
@@ -365,11 +362,12 @@ defmodule FMBench do
     end
   end
 
-  defp flush do
+  # the messages of earlier transfers in the mailbox, dropped: how many
+  defp flush(n) do
     receive do
-      {:bench, _, _} -> flush()
+      {:bench, _, _} -> flush(n + 1)
     after
-      0 -> :ok
+      0 -> n
     end
   end
 
