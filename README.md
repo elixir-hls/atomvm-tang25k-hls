@@ -149,6 +149,11 @@ check and a last line such as `PUSH OK`. Each needs its own SoC: build the kerne
 - **Pins:** `gpio_demo.ex` (the board's LEDs and buttons: LED 0 blinks, each edge of a button an event from an instance,
   printed with its time, LED 1 follows button 0); `button_counter.ex` (a counter of presses in the FPGA with a debounce,
   its low bit on an LED, without the CPU).
+- **A whole application's circuits:** `fm_bench.ex` (with `fm_bench_coeffs.ex`, `fm_bench_ref.ex`): the FM radio's
+  demodulator between CPU ends on fixed data, its output and states compared with the expected ones computed on the
+  host at compile time, while states are read, levels written, a stream sent in parts and the instance stopped and
+  started; `FM BENCH OK` at the end. Checks a change to elixir-hls's circuits on the board with no antenna and no
+  listening.
 - **The CPU:** `cpu_placement_demo.ex` (instances placed on the CPU, in Elixir and as C, and the time per element);
   `cpu_levels_demo.ex` (a function on the CPU with a level wired in); `server_demo.ex` (`EHLS.Server` owning instances).
 
